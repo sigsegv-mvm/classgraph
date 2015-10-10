@@ -43,35 +43,8 @@ typedef struct {
 	uintptr_t       addr;
 	uintptr_t       size;
 	const char     *name;
+	const char     *name_demangled;
 } symbol_t;
-
-typedef struct {
-	const char *name;
-	const char *name_demangled;
-	
-	uintptr_t func_addr;
-	size_t    func_size;
-	
-	bool      has_detour;
-	uintptr_t detour_addr;
-	
-	uintptr_t trampoline_addr;
-	size_t    trampoline_size;
-	uintptr_t trampoline_dest;
-	
-	size_t  restore_len;
-	uint8_t restore_buf[20];
-} func_t;
-
-
-#define CONV_LE(_dword) \
-	(uint8_t)((uint32_t)(_dword) >>  0), \
-	(uint8_t)((uint32_t)(_dword) >>  8), \
-	(uint8_t)((uint32_t)(_dword) >> 16), \
-	(uint8_t)((uint32_t)(_dword) >> 24),
-
-#define CALC_RELJMP(_src, _off, _dst) \
-	((uintptr_t)_dst - ((uintptr_t)_src + _off))
 
 
 #define pr_debug(_fmt, ...) \
@@ -93,10 +66,6 @@ typedef struct {
 	err(_code, "\e[91m" _fmt "\e[0m", ##__VA_ARGS__)
 #define errx(_code, _fmt, ...) \
 	errx(_code, "\e[91m" _fmt "\e[0m", ##__VA_ARGS__)
-
-
-#define SIZE_CHECK(_type, _size) \
-	_Static_assert(sizeof(_type) == _size, "bad size: " #_type);
 
 
 #endif

@@ -9,33 +9,6 @@ using __cxxabiv1::__si_class_type_info;
 using __cxxabiv1::__vmi_class_type_info;
 
 
-const char *try_demangle(const char *mangled)
-{
-	const char *demangled = cplus_demangle(mangled,
-		DMGL_GNU_V3 | DMGL_TYPES | DMGL_ANSI | DMGL_PARAMS);
-	
-	if (demangled != NULL) {
-		return demangled;
-	} else {
-		return mangled;
-	}
-}
-
-
-const char *try_demangle_noprefix(const char *mangled)
-{
-	const char *demangled = try_demangle(mangled);
-	
-	if (strncmp(demangled, "typeinfo for ", 13) == 0) {
-		return demangled + 13;
-	} else if (strncmp(demangled, "vtable for ", 11) == 0) {
-		return demangled + 11;
-	} else {
-		return demangled;
-	}
-}
-
-
 static uintptr_t vtable_for__class_type_info;
 static uintptr_t vtable_for__si_class_type_info;
 static uintptr_t vtable_for__vmi_class_type_info;
@@ -87,10 +60,9 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 		type_char = '?';
 	}
 	
-	const char *demangled = try_demangle_noprefix(sym->name);
 	pr_info("%s%s[%c] ", (level == 0 ? "\n" : ""),
 		indent, type_char);
-	pr_debug("%s\n", demangled);
+	pr_debug("%s\n", sym->name_demangled);
 	
 	if (type_char == '+') {
 		auto rtti_si = reinterpret_cast<const __si_class_type_info *>(rtti);
@@ -152,17 +124,24 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 }
 
 
+std::vector<symbol_t> syms;
+
+
 void sym_iterator(const symbol_t *sym)
 {
-	if (strncmp(sym->name, "_ZTI", 4) != 0) {
+	if (strncmp(sym->name, "_ZTI", 4) != 0 ||
+		!r_match(sym->name_demangled)) {
 		return;
 	}
 	
-	if (!r_match(try_demangle_noprefix(sym->name))) {
-		return;
-	}
-	
-	recurse_typeinfo(0, sym);
+	syms.push_back(*sym);
+}
+
+
+bool sym_compare(const symbol_t& lhs, const symbol_t& rhs)
+{
+	int cmp = strcmp(lhs.name_demangled, rhs.name_demangled);
+	return (cmp < 0);
 }
 
 
@@ -180,7 +159,12 @@ int main(int argc, char **argv)
 	
 	get_type_info_addrs();
 	
+	
 	symtab_foreach(&sym_iterator, STT_OBJECT);
+	std::sort(syms.begin(), syms.end(), &sym_compare);
+	for (const symbol_t& sym : syms) {
+		recurse_typeinfo(0, &sym);
+	}
 	
 	return 0;
 }

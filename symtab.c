@@ -1,6 +1,33 @@
 #include "all.h"
 
 
+const char *try_demangle(const char *mangled)
+{
+	const char *demangled = cplus_demangle(mangled,
+		DMGL_GNU_V3 | DMGL_TYPES | DMGL_ANSI | DMGL_PARAMS);
+	
+	if (demangled != NULL) {
+		return demangled;
+	} else {
+		return mangled;
+	}
+}
+
+
+const char *try_demangle_noprefix(const char *mangled)
+{
+	const char *demangled = try_demangle(mangled);
+	
+	if (strncmp(demangled, "typeinfo for ", 13) == 0) {
+		return demangled + 13;
+	} else if (strncmp(demangled, "vtable for ", 11) == 0) {
+		return demangled + 11;
+	} else {
+		return demangled;
+	}
+}
+
+
 void symtab_init(library_info_t *lib)
 {
 	lib->elf_hdr = lib->map;
@@ -85,6 +112,7 @@ void symtab_foreach(void (*callback)(const symbol_t *), Elf32_Word type)
 				.size = sym.st_size,
 				.name = elf_strptr(lib->elf,
 					lib->symtab_shdr.sh_link, sym.st_name),
+				.name_demangled = try_demangle_noprefix(entry.name),
 			};
 			callback(&entry);
 		}
@@ -110,6 +138,7 @@ bool symtab_lookup_name(library_info_t *lib, symbol_t *entry, Elf32_Word type,
 			entry->addr = sym.st_value;
 			entry->size = sym.st_size;
 			entry->name = this_name;
+			entry->name_demangled = try_demangle_noprefix(this_name);
 			
 			return true;
 		}
@@ -139,6 +168,7 @@ bool symtab_lookup_addr(library_info_t *lib, symbol_t *entry, Elf32_Word type,
 			entry->size = sym.st_size;
 			entry->name = elf_strptr(lib->elf,
 				lib->symtab_shdr.sh_link, sym.st_name);
+			entry->name_demangled = try_demangle_noprefix(entry->name);
 			
 			return true;
 		}
@@ -173,6 +203,7 @@ bool symtab_lookup_addr_range(library_info_t *lib, symbol_t *entry,
 			entry->size = sym.st_size;
 			entry->name = elf_strptr(lib->elf,
 				lib->symtab_shdr.sh_link, sym.st_name);
+			entry->name_demangled = try_demangle_noprefix(entry->name);
 			
 			return true;
 		}
