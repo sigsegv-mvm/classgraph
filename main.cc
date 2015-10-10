@@ -61,7 +61,10 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 {
 	char indent[1024];
 	char *p = indent;
-	for (int i = 0; i < level * 4; ++i) {
+	for (int i = 0; i < level; ++i) {
+		*(p++) = ' ';
+		*(p++) = '|';
+		*(p++) = ' ';
 		*(p++) = ' ';
 	}
 	*p = '\0';
@@ -73,11 +76,11 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 	
 	uintptr_t ti_vtable = *(const uintptr_t *)rtti;
 	if (ti_vtable == vtable_for__class_type_info) {
-		type_char = 'B';
+		type_char = '-';
 	} else if (ti_vtable == vtable_for__si_class_type_info) {
-		type_char = 'S';
+		type_char = '+';
 	} else if (ti_vtable == vtable_for__vmi_class_type_info) {
-		type_char = 'M';
+		type_char = '#';
 	} else {
 		pr_warn("\n%scould not decipher typeinfo vtable ptr!",
 			indent);
@@ -89,7 +92,7 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 		indent, type_char);
 	pr_debug("%s\n", demangled);
 	
-	if (type_char == 'S') {
+	if (type_char == '+') {
 		auto rtti_si = reinterpret_cast<const __si_class_type_info *>(rtti);
 		
 		symbol_t sym_base;
@@ -100,7 +103,7 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 			pr_warn("%s    could not find typeinfo symbol for base!\n",
 				indent);
 		}
-	} else if (type_char == 'M') {
+	} else if (type_char == '#') {
 		auto rtti_vmi = reinterpret_cast<const __vmi_class_type_info *>(rtti);
 		
 		for (unsigned int i = 0; i != rtti_vmi->__base_count; ++i) {
@@ -131,7 +134,7 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 				strlcat(str_flags, "HWM", sizeof(str_flags));
 			}
 			
-			pr_info("%s{%u} ",
+			pr_info("%s %u: ",
 				indent, i);
 			pr_debug("+%06x %s\n",
 				offset, str_flags);
