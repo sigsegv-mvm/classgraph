@@ -3,3 +3,4 @@
 *.lst
 *.gch
 *.sublime-workspace
+classgraph
