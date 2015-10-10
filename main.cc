@@ -158,7 +158,7 @@ void sym_iterator(const symbol_t *sym)
 		return;
 	}
 	
-	if (!r_match(sym->name)) {
+	if (!r_match(try_demangle_noprefix(sym->name))) {
 		return;
 	}
 	
