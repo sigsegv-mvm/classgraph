@@ -195,25 +195,25 @@ int main(int argc, char **argv)
 	lib_init("datacache_srv.so");
 	lib_init("scenefilecache_srv.so");
 	
-	//lib_init("engine.dylib");
+	lib_init("engine.dylib");
 	lib_init("server.dylib");
-	//lib_init("client.dylib");
-	//lib_init("filesystem_stdio.dylib");
-	//lib_init("GameUI.dylib");
-	//lib_init("inputsystem.dylib");
-	//lib_init("launcher.dylib");
-	//lib_init("libtier0.dylib");
-	//lib_init("libvstdlib.dylib");
-	//lib_init("materialsystem.dylib");
-	//lib_init("replay.dylib");
-	//lib_init("ServerBrowser.dylib");
-	//lib_init("soundemittersystem.dylib");
-	//lib_init("studiorender.dylib");
-	//lib_init("vgui2.dylib");
-	//lib_init("vguimatsurface.dylib");
-	//lib_init("vphysics.dylib");
-	//lib_init("datacache.dylib");
-	//lib_init("scenefilecache.dylib");
+	lib_init("client.dylib");
+	lib_init("filesystem_stdio.dylib");
+	lib_init("GameUI.dylib");
+	lib_init("inputsystem.dylib");
+	lib_init("launcher.dylib");
+	lib_init("libtier0.dylib");
+	lib_init("libvstdlib.dylib");
+	lib_init("materialsystem.dylib");
+	lib_init("replay.dylib");
+	lib_init("ServerBrowser.dylib");
+	lib_init("soundemittersystem.dylib");
+	lib_init("studiorender.dylib");
+	lib_init("vgui2.dylib");
+	lib_init("vguimatsurface.dylib");
+	lib_init("vphysics.dylib");
+	lib_init("datacache.dylib");
+	lib_init("scenefilecache.dylib");
 	
 	get_type_info_addrs();
 	
