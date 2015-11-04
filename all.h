@@ -40,11 +40,16 @@
 
 /* libiberty */
 #define HAVE_DECL_BASENAME 1
-#include <demangle.h>
+#include <libiberty/demangle.h>
 
 /* libelf */
 #include <libelf.h>
 #include <gelf.h>
+
+/* apple osx */
+#include <mach-o/loader.h>
+#include <mach-o/nlist.h>
+#include <mach-o/reloc.h>
 
 /* sourcemod */
 //#include "sourcemod/asm.h"
@@ -68,6 +73,9 @@ extern "C" {
 //#include "util.h"
 //#include "entprop.h"
 //#include "backtrace.h"
+#include "demangle.h"
+#include "symtab_elf.h"
+#include "symtab_macho.h"
 #ifdef __cplusplus
 }
 #endif

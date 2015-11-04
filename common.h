@@ -17,12 +17,30 @@ typedef struct {
 	struct link_map *linkmap;
 	uintptr_t        baseaddr;
 	
+	/* generic symtab stuff */
+	bool is_elf;
+	bool is_macho;
+	
 	/* elf symtab stuff */
 	Elf        *elf;
 	Elf32_Ehdr *elf_hdr;
-	Elf_Data   *symtab_data;
-	GElf_Shdr   symtab_shdr;
-	int         symtab_count;
+	Elf_Data   *elf_symtab_data;
+	GElf_Shdr   elf_symtab_shdr;
+	int         elf_symtab_count;
+	
+	/* mach-o symtab stuff */
+	struct mach_header *macho_hdr;
+	int                 macho_sect_count;
+	struct section     *macho_sects[256];
+	uint32_t            macho_symtab_off;
+	uint32_t            macho_symtab_count;
+	uint32_t            macho_strtab_off;
+	uint32_t            macho_strtab_size;
+	uint32_t            macho_ext_reloc_off;
+	uint32_t            macho_ext_reloc_count;
+	int                 macho_symidx_base;
+	int                 macho_symidx_si;
+	int                 macho_symidx_vmi;
 	
 	/* section info */
 	uintptr_t text_off;

@@ -64,7 +64,8 @@ void lib_init(const char *path)
 				snprintf(fixed_path, 1024, "../../../%s", path);
 				
 				if ((lib->fd = open(fixed_path, O_RDONLY)) == -1) {*/
-					err(1, "open('%s') failed", name);
+					warn("open('%s') failed", name);
+					return;
 	/*			}
 			}
 		}
@@ -72,12 +73,19 @@ void lib_init(const char *path)
 		lib->path = fixed_path;*/
 	}
 	
-	if ((lib->handle = dlopen(lib->path, RTLD_LAZY | RTLD_GLOBAL)) == NULL) {
-		errx(1, "dlopen('%s') failed: %s", name, dlerror());
+	lib->is_elf   = (strstr(name, ".so") != NULL);
+	lib->is_macho = (strstr(name, ".dylib") != NULL);
+	
+	if (lib->is_elf) {
+		if ((lib->handle = dlopen(lib->path, RTLD_LAZY | RTLD_GLOBAL)) == NULL) {
+			warnx("dlopen('%s') failed: %s", name, dlerror());
+			return;
+		}
 	}
 	
 	if (fstat(lib->fd, &lib->stat) != 0) {
-		err(1, "fstat('%s') failed", name);
+		warn("fstat('%s') failed", name);
+		return;
 	}
 	lib->size = lib->stat.st_size;
 	
@@ -86,13 +94,19 @@ void lib_init(const char *path)
 	
 	if ((lib->map = mmap(NULL, lib->size, PROT_READ, MAP_PRIVATE, lib->fd, 0))
 		== MAP_FAILED) {
-		err(1, "mmap('%s') failed", name);
+		warn("mmap('%s') failed", name);
+		return;
 	}
 	
-	if (dlinfo(lib->handle, RTLD_DI_LINKMAP, &lib->linkmap) != 0) {
-		errx(1, "dlinfo('%s', RTLD_DI_LINKMAP) failed: %s", name, dlerror());
+	if (lib->is_elf) {
+		if (dlinfo(lib->handle, RTLD_DI_LINKMAP, &lib->linkmap) != 0) {
+			warnx("dlinfo('%s', RTLD_DI_LINKMAP) failed: %s", name, dlerror());
+			return;
+		}
+		lib->baseaddr = lib->linkmap->l_addr;
+	} else {
+		lib->baseaddr = 0;
 	}
-	lib->baseaddr = lib->linkmap->l_addr;
 	
 	symtab_init(lib);
 	
