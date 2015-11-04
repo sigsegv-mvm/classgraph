@@ -94,18 +94,18 @@ void symtab_macho_init(library_info_t *lib)
 			for (int j = 0; j < seg_cmd->nsects; ++j) {
 				struct section *sect = (struct section *)sect_addr;
 				
-				pr_debug("  section %d:\n", j);
-				pr_debug("    sectname:  '%s'\n", sect->sectname);
-				pr_debug("    segname:   '%s'\n", sect->segname);
-				pr_debug("    addr:      %08x\n", sect->addr);
-				pr_debug("    size:      %08x\n", sect->size);
-				pr_debug("    offset:    %08x\n", sect->offset);
-				pr_debug("    align:     %08x\n", sect->align);
-				pr_debug("    reloff:    %08x\n", sect->reloff);
-				pr_debug("    nreloc:    %08x\n", sect->nreloc);
-				pr_debug("    flags:     %08x\n", sect->flags);
-				pr_debug("    reserved1: %08x\n", sect->reserved1);
-				pr_debug("    reserved2: %08x\n", sect->reserved2);
+				//pr_debug("  section %d:\n", j);
+				//pr_debug("    sectname:  '%s'\n", sect->sectname);
+				//pr_debug("    segname:   '%s'\n", sect->segname);
+				//pr_debug("    addr:      %08x\n", sect->addr);
+				//pr_debug("    size:      %08x\n", sect->size);
+				//pr_debug("    offset:    %08x\n", sect->offset);
+				//pr_debug("    align:     %08x\n", sect->align);
+				//pr_debug("    reloff:    %08x\n", sect->reloff);
+				//pr_debug("    nreloc:    %08x\n", sect->nreloc);
+				//pr_debug("    flags:     %08x\n", sect->flags);
+				//pr_debug("    reserved1: %08x\n", sect->reserved1);
+				//pr_debug("    reserved2: %08x\n", sect->reserved2);
 				
 				assert(lib->macho_sect_count <= 255);
 				lib->macho_sects[lib->macho_sect_count++] = sect;
@@ -139,51 +139,30 @@ void symtab_macho_init(library_info_t *lib)
 			struct dysymtab_command *dysymtab_cmd =
 				(struct dysymtab_command *)cmd;
 			
-			pr_debug("  ilocalsym:      %08x\n", dysymtab_cmd->ilocalsym);
-			pr_debug("  nlocalsym:      %08x\n", dysymtab_cmd->nlocalsym);
-			pr_debug("  iextdefsym:     %08x\n", dysymtab_cmd->iextdefsym);
-			pr_debug("  nextdefsym:     %08x\n", dysymtab_cmd->nextdefsym);
-			pr_debug("  iundefsym:      %08x\n", dysymtab_cmd->iundefsym);
-			pr_debug("  nundefsym:      %08x\n", dysymtab_cmd->nundefsym);
-			pr_debug("  tocoff:         %08x\n", dysymtab_cmd->tocoff);
-			pr_debug("  ntoc:           %08x\n", dysymtab_cmd->ntoc);
-			pr_debug("  modtaboff:      %08x\n", dysymtab_cmd->modtaboff);
-			pr_debug("  nmodtab:        %08x\n", dysymtab_cmd->nmodtab);
-			pr_debug("  extrefsymoff:   %08x\n", dysymtab_cmd->extrefsymoff);
-			pr_debug("  nextrefsyms:    %08x\n", dysymtab_cmd->nextrefsyms);
-			pr_debug("  indirectsymoff: %08x\n", dysymtab_cmd->indirectsymoff);
-			pr_debug("  nindirectsyms:  %08x\n", dysymtab_cmd->nindirectsyms);
-			pr_debug("  extreloff:      %08x\n", dysymtab_cmd->extreloff);
-			pr_debug("  nextrel:        %08x\n", dysymtab_cmd->nextrel);
-			pr_debug("  locreloff:      %08x\n", dysymtab_cmd->locreloff);
-			pr_debug("  nlocrel:        %08x\n", dysymtab_cmd->nlocrel);
+			//pr_debug("  ilocalsym:      %08x\n", dysymtab_cmd->ilocalsym);
+			//pr_debug("  nlocalsym:      %08x\n", dysymtab_cmd->nlocalsym);
+			//pr_debug("  iextdefsym:     %08x\n", dysymtab_cmd->iextdefsym);
+			//pr_debug("  nextdefsym:     %08x\n", dysymtab_cmd->nextdefsym);
+			//pr_debug("  iundefsym:      %08x\n", dysymtab_cmd->iundefsym);
+			//pr_debug("  nundefsym:      %08x\n", dysymtab_cmd->nundefsym);
+			//pr_debug("  tocoff:         %08x\n", dysymtab_cmd->tocoff);
+			//pr_debug("  ntoc:           %08x\n", dysymtab_cmd->ntoc);
+			//pr_debug("  modtaboff:      %08x\n", dysymtab_cmd->modtaboff);
+			//pr_debug("  nmodtab:        %08x\n", dysymtab_cmd->nmodtab);
+			//pr_debug("  extrefsymoff:   %08x\n", dysymtab_cmd->extrefsymoff);
+			//pr_debug("  nextrefsyms:    %08x\n", dysymtab_cmd->nextrefsyms);
+			//pr_debug("  indirectsymoff: %08x\n", dysymtab_cmd->indirectsymoff);
+			//pr_debug("  nindirectsyms:  %08x\n", dysymtab_cmd->nindirectsyms);
+			//pr_debug("  extreloff:      %08x\n", dysymtab_cmd->extreloff);
+			//pr_debug("  nextrel:        %08x\n", dysymtab_cmd->nextrel);
+			//pr_debug("  locreloff:      %08x\n", dysymtab_cmd->locreloff);
+			//pr_debug("  nlocrel:        %08x\n", dysymtab_cmd->nlocrel);
 			
 			lib->macho_ext_reloc_off   = dysymtab_cmd->extreloff;
 			lib->macho_ext_reloc_count = dysymtab_cmd->nextrel;
 		}
 		
 		cmd_addr += cmd->cmdsize;
-	}
-	
-	
-	lib->macho_symidx_base = -1;
-	lib->macho_symidx_si   = -1;
-	lib->macho_symidx_vmi  = -1;
-	
-	uintptr_t sym_off = (uintptr_t)lib->map + lib->macho_symtab_off;
-	for (int i = 0; i < lib->macho_symtab_count; ++i) {
-		struct nlist *sym = (struct nlist *)sym_off + i;
-		
-		if (strcmp(macho_get_sym_name(lib, sym),
-			"_ZTVN10__cxxabiv117__class_type_infoE") == 0) {
-			lib->macho_symidx_base = i;
-		} else if (strcmp(macho_get_sym_name(lib, sym),
-			"_ZTVN10__cxxabiv120__si_class_type_infoE") == 0) {
-			lib->macho_symidx_si = i;
-		} else if (strcmp(macho_get_sym_name(lib, sym),
-			"_ZTVN10__cxxabiv121__vmi_class_type_infoE") == 0) {
-			lib->macho_symidx_vmi = i;
-		}
 	}
 }
 
@@ -240,33 +219,6 @@ void symtab_macho_foreach(library_info_t *lib,
 }
 
 
-bool symtab_macho_lookup_name(library_info_t *lib, symbol_t *entry,
-	const char *name)
-{
-	uintptr_t sym_off = (uintptr_t)lib->map + lib->macho_symtab_off;
-	for (int i = 0; i < lib->macho_symtab_count; ++i) {
-		struct nlist *sym = (struct nlist *)sym_off + i;
-		
-		#warning should this be commented out?
-		//if ((sym->n_type & N_EXT) != 0 || (sym->n_type & N_STAB) != 0) {
-		//	/* skip external and debug entries */
-		//	continue;
-		//}
-		
-		if (strcmp(name, macho_get_sym_name(lib, sym)) == 0) {
-			entry->lib  = lib;
-			entry->addr = macho_get_sym_addr(lib, sym);
-			entry->size = 0;
-			entry->name = name;
-			entry->name_demangled = try_demangle_noprefix(entry->name);
-			
-			return true;
-		}
-	}
-	
-	return false;
-}
-
 bool symtab_macho_lookup_addr(library_info_t *lib, symbol_t *entry,
 	uintptr_t addr)
 {
@@ -300,127 +252,31 @@ bool symtab_macho_lookup_addr(library_info_t *lib, symbol_t *entry,
 bool symtab_macho_find_reloc_sym_for_addr(library_info_t *lib, symbol_t *entry,
 	uintptr_t addr)
 {
-	pr_debug("%s: %s\n", __func__, lib->name, lib->macho_sect_count);
-	
-	for (int i = 0; i < lib->macho_sect_count; ++i) {
-		struct section *sect = lib->macho_sects[i];
-		pr_debug("%s %d %08x\n", lib->name, i, sect);
-		pr_debug("  %08x %08x\n", sect->reloff, sect->nreloc);
-		
-		uintptr_t reloc_addr = (uintptr_t)lib->map + sect->reloff;
-		for (int j = 0; j < sect->nreloc; ++j) {
-			struct relocation_info *reloc =
-				(struct relocation_info *)reloc_addr + j;
-			
-			pr_debug("lib %s sect %d reloc %d\n", lib->name, i, j);
-			pr_debug("  r_address:   %08x\n", reloc->r_address);
-			pr_debug("  r_symbolnum: %06x\n", reloc->r_symbolnum);
-			pr_debug("  r_pcrel:     %01x\n", reloc->r_pcrel);
-			pr_debug("  r_length:    %01x\n", reloc->r_length);
-			pr_debug("  r_extern:    %01x\n", reloc->r_extern);
-			pr_debug("  r_type:      %01x\n", reloc->r_type);
-			
-			if (reloc->r_address == addr && !reloc->r_extern) {
-				struct nlist *sym =
-					macho_get_sym_by_index(lib, reloc->r_symbolnum);
-				
-				entry->lib  = lib;
-				entry->addr = macho_get_sym_addr(lib, sym);
-				entry->size = 0;
-				entry->name = macho_get_sym_name(lib, sym);
-				entry->name_demangled = try_demangle_noprefix(entry->name);
-				
-				return true;
-			}
-		}
-	}
-	
-	
-	return false;
-}
-
-int symtab_macho_check_rtti_reloc(library_info_t *lib, uintptr_t addr)
-{
-	struct relocation_info reloc_base = {
-		.r_address   = addr,
-		.r_symbolnum = lib->macho_symidx_base,
-		.r_pcrel     = 0b0,
-		.r_length    = 0b10,
-		.r_extern    = 0b1,
-		.r_type      = 0b0000,
-	};
-	struct relocation_info reloc_si = {
-		.r_address   = addr,
-		.r_symbolnum = lib->macho_symidx_si,
-		.r_pcrel     = 0b0,
-		.r_length    = 0b10,
-		.r_extern    = 0b1,
-		.r_type      = 0b0000,
-	};
-	struct relocation_info reloc_vmi = {
-		.r_address   = addr,
-		.r_symbolnum = lib->macho_symidx_vmi,
-		.r_pcrel     = 0b0,
-		.r_length    = 0b10,
-		.r_extern    = 0b1,
-		.r_type      = 0b0000,
-	};
-	
 	for (int i = 0; i < lib->macho_ext_reloc_count; ++i) {
 		struct relocation_info *reloc =
 			(struct relocation_info *)((uintptr_t)lib->map +
-				lib->macho_ext_reloc_off) + i;
+			lib->macho_ext_reloc_off) + i;
+		
+		//pr_debug("r_address:   %08x\n", reloc->r_address);
+		//pr_debug("r_symbolnum: %06x\n", reloc->r_symbolnum);
+		//pr_debug("r_pcrel:     %01x\n", reloc->r_pcrel);
+		//pr_debug("r_length:    %01x\n", reloc->r_length);
+		//pr_debug("r_extern:    %01x\n", reloc->r_extern);
+		//pr_debug("r_type:      %01x\n", reloc->r_type);
 		
 		if (reloc->r_address == addr) {
-			if (((uint32_t *)reloc)[1] == ((uint32_t *)&reloc_base)[1]) {
-				return 1;
-			} else if (((uint32_t *)reloc)[1] == ((uint32_t *)&reloc_si)[1]) {
-				return 2;
-			} else if (((uint32_t *)reloc)[1] == ((uint32_t *)&reloc_vmi)[1]) {
-				return 3;
-			}
+			struct nlist *sym =
+				macho_get_sym_by_index(lib, reloc->r_symbolnum);
+			
+			entry->lib  = lib;
+			entry->addr = macho_get_sym_addr(lib, sym);
+			entry->size = 0;
+			entry->name = macho_get_sym_name(lib, sym);
+			entry->name_demangled = try_demangle_noprefix(entry->name);
+			
+			return true;
 		}
 	}
 	
-	/*
-	//uintptr_t search_begin = lib->data_off;
-	//uintptr_t search_end   = lib->data_off + lib->data_size;
-	uintptr_t search_begin = 0;
-	uintptr_t search_end   = lib->size;
-	
-	pr_debug("FROM %08x\nTO   %08x\n", search_begin, search_end);
-	
-	for (uintptr_t i = search_begin; i < search_end -
-		sizeof(struct relocation_info); i += 4) {
-		if (memcmp((uint8_t *)lib->map + i, &reloc_base,
-			sizeof(struct relocation_info)) == 0) {
-			return 1;
-		}
-		if (memcmp((uint8_t *)lib->map + i, &reloc_si,
-			sizeof(struct relocation_info)) == 0) {
-			return 2;
-		}
-		if (memcmp((uint8_t *)lib->map + i, &reloc_vmi,
-			sizeof(struct relocation_info)) == 0) {
-			pr_debug("found reloc entry @ %08x\n", i);
-			for (int j = 0; j < lib->macho_sect_count; ++j) {
-				struct section *sect = lib->macho_sects[j];
-				
-				if (i >= sect->addr && i < sect->addr + sect->size) {
-					pr_debug("found reloc entry in memory space of section:\n");
-					pr_debug("seg '%s' sect '%s'\n",
-						sect->segname, sect->sectname);
-				}
-				if (i >= sect->offset && i < sect->offset + sect->size) {
-					pr_debug("found reloc entry in file space of section:\n");
-					pr_debug("seg '%s' sect '%s'\n",
-						sect->segname, sect->sectname);
-				}
-			}
-			
-			return 3;
-		}
-	}*/
-	
-	return 0;
+	return false;
 }

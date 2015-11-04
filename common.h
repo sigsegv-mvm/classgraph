@@ -38,9 +38,6 @@ typedef struct {
 	uint32_t            macho_strtab_size;
 	uint32_t            macho_ext_reloc_off;
 	uint32_t            macho_ext_reloc_count;
-	int                 macho_symidx_base;
-	int                 macho_symidx_si;
-	int                 macho_symidx_vmi;
 	
 	/* section info */
 	uintptr_t text_off;

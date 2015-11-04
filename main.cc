@@ -65,49 +65,27 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 	}
 	if (sym->lib->is_macho) {
 		uintptr_t rtti_addr = (uintptr_t)rtti - (uintptr_t)sym->lib->map;
-		int rtti_type = symtab_macho_check_rtti_reloc(sym->lib, rtti_addr);
-		if (rtti_type == 1) {
-			type_char = '-';
-		} else if (rtti_type == 2) {
-			type_char = '+';
-		} else if (rtti_type == 3) {
-			type_char = '#';
+		
+		symbol_t rsym;
+		if (symtab_macho_find_reloc_sym_for_addr(sym->lib, &rsym, rtti_addr)) {
+			if (strcmp(rsym.name,
+				"_ZTVN10__cxxabiv117__class_type_infoE") == 0) {
+				type_char = '-';
+			} else if (strcmp(rsym.name,
+				"_ZTVN10__cxxabiv120__si_class_type_infoE") == 0) {
+				type_char = '+';
+			} else if (strcmp(rsym.name,
+				"_ZTVN10__cxxabiv121__vmi_class_type_infoE") == 0) {
+				type_char = '#';
+			} else {
+				pr_warn("whoa, got unexpected reloc symbol:\n"
+					"  %08x '%s'\n",
+					rsym.addr, rsym.name_demangled);
+			}
 		} else {
 			pr_warn("could not find reloc entry for rtti! (%08x)\n",
 				rtti_addr);
 		}
-		
-		/*
-		symbol_t ti_base, ti_si, ti_vmi;
-		
-		assert(symtab_macho_lookup_name(sym->lib, &ti_base, "_ZTVN10__cxxabiv117__class_type_infoE"));
-		assert(symtab_macho_lookup_name(sym->lib, &ti_si, "_ZTVN10__cxxabiv120__si_class_type_infoE"));
-		assert(symtab_macho_lookup_name(sym->lib, &ti_vmi, "_ZTVN10__cxxabiv121__vmi_class_type_infoE"));
-		
-		uintptr_t rtti_addr = (uintptr_t)rtti - sym->lib->baseaddr;
-		if (symtab_macho_check_reloc_for_addr(sym->lib, rtti_addr, &ti_base)) {
-			//pr_debug("SUCCESS: base class\n");
-			type_char = '-';
-		} else if (symtab_macho_check_reloc_for_addr(sym->lib, rtti_addr, &ti_si)) {
-			//pr_debug("SUCCESS: si class\n");
-			type_char = '+';
-		} else if (symtab_macho_check_reloc_for_addr(sym->lib, rtti_addr, &ti_vmi)) {
-			//pr_debug("SUCCESS: vmi class\n");
-			type_char = '#';
-		} else {
-			//pr_debug("FAILURE\n");
-		}*/
-		
-		/*
-		symbol_t rsym;
-		if (symtab_macho_find_reloc_sym_for_addr(sym->lib, &rsym,
-			rtti_addr)) {
-			pr_debug("found relocation entry for %08x\n",
-				rtti_addr);
-		} else {
-			pr_debug("could not find relocation entry for %08x\n",
-				rtti_addr);
-		}*/
 	}
 	
 	printf("%s%s[%c] ", (level == 0 ? "\n" : ""),
