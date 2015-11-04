@@ -47,10 +47,11 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 	*p = '\0';
 	
 	char type_char = '?';
-	auto rtti =
-		(const __class_type_info *)((uintptr_t)sym->lib->map + sym->addr);
+	const __class_type_info *rtti = nullptr;
 	
 	if (sym->lib->is_elf) {
+		rtti = (const __class_type_info *)(sym->lib->baseaddr + sym->addr);
+		
 		uintptr_t ti_vtable = *(const uintptr_t *)rtti;
 		if (ti_vtable == vtable_for__class_type_info) {
 			type_char = '-';
@@ -64,10 +65,11 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 		}
 	}
 	if (sym->lib->is_macho) {
-		uintptr_t rtti_addr = (uintptr_t)rtti - (uintptr_t)sym->lib->map;
+		rtti = (const __class_type_info *)((uintptr_t)sym->lib->map +
+			sym->addr);
 		
 		symbol_t rsym;
-		if (symtab_macho_find_reloc_sym_for_addr(sym->lib, &rsym, rtti_addr)) {
+		if (symtab_macho_find_reloc_sym_for_addr(sym->lib, &rsym, sym->addr)) {
 			if (strcmp(rsym.name,
 				"_ZTVN10__cxxabiv117__class_type_infoE") == 0) {
 				type_char = '-';
@@ -84,7 +86,7 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 			}
 		} else {
 			pr_warn("could not find reloc entry for rtti! (%08x)\n",
-				rtti_addr);
+				sym->addr);
 		}
 	}
 	
