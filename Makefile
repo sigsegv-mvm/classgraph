@@ -1,5 +1,5 @@
-CFLAGS  :=-m32 -I. -Iosx -std=gnu11 -Og -g -Wall -fdiagnostics-color=always -Wno-unused-variable -Wno-unused-function -march=native -mtune=native -pthread
-CXXFLAGS:=-m32 -I. -Iosx -std=gnu++14 -Og -g -Wall -fdiagnostics-color=always -Wno-unused-variable -Wno-unused-function -march=native -mtune=native -pthread
+CFLAGS  :=-m32 -I. -Iosx -std=gnu11 -O2 -g -Wall -fdiagnostics-color=always -Wno-unused-variable -Wno-unused-function -march=native -mtune=native -pthread
+CXXFLAGS:=-m32 -I. -Iosx -std=gnu++14 -O2 -g -Wall -fdiagnostics-color=always -Wno-unused-variable -Wno-unused-function -march=native -mtune=native -pthread
 LDFLAGS :=-Wl,-rpath=. -lm -ldl -lbsd -lelf -Wl,-E libiberty.a
 
 SOURCES_C:=$(shell find . -follow -type f -name '*.c')
