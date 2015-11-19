@@ -50,9 +50,50 @@ void symtab_macho_init(library_info_t *lib)
 	
 	//pr_debug("MACH-O INIT\n");
 	
+	/* hacky support for universal binaries */
+	if (NXSwapInt(lib->macho_hdr->magic) == FAT_MAGIC) {
+		//pr_debug("detected universal binary\n");
+		
+		struct fat_header *hdr = (struct fat_header *)lib->macho_hdr;
+		
+		bool found_i386 = false;
+		uintptr_t arch_addr = (uintptr_t)lib->map + sizeof(struct fat_header);
+		for (int i = 0; i < hdr->nfat_arch; ++i) {
+			struct fat_arch *arch = (struct fat_arch *)arch_addr;
+			
+			//pr_debug(
+			//	"fat_arch %d:\n"
+			//	"  cputype    %08x\n"
+			//	"  cpusubtype %08x\n"
+			//	"  offset     %08x\n"
+			//	"  size       %08x\n"
+			//	"  align      %08x\n",
+			//	i,
+			//	NXSwapInt(arch->cputype),
+			//	NXSwapInt(arch->cpusubtype),
+			//	NXSwapInt(arch->offset),
+			//	NXSwapInt(arch->size),
+			//	NXSwapInt(arch->align));
+			
+			if (NXSwapInt(arch->cputype) == CPU_TYPE_I386 &&
+				NXSwapInt(arch->cpusubtype) == CPU_SUBTYPE_I386_ALL) {
+				lib->map = (void *)((uintptr_t)lib->map +
+					NXSwapInt(arch->offset));
+				lib->macho_hdr = lib->map;
+				lib->size = NXSwapInt(arch->size);
+				
+				found_i386 = true;
+				break;
+			}
+			
+			arch_addr += sizeof(struct fat_arch);
+		}
+		assert(found_i386);
+	}
+	
 	assert(lib->macho_hdr->magic      == MH_MAGIC);
-	assert(lib->macho_hdr->cputype    == CPU_TYPE_X86);
-	assert(lib->macho_hdr->cpusubtype == CPU_SUBTYPE_X86_ALL);
+	assert(lib->macho_hdr->cputype    == CPU_TYPE_I386);
+	assert(lib->macho_hdr->cpusubtype == CPU_SUBTYPE_I386_ALL);
 	assert(lib->macho_hdr->filetype   == MH_DYLIB);
 	
 	//pr_debug("ncmds:      %08x\n", lib->macho_hdr->ncmds);
