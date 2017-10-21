@@ -12,8 +12,7 @@ static const char *macho_get_sym_name(library_info_t *lib, struct nlist *sym)
 	if (sym->n_un.n_strx == 0) {
 		return "";
 	} else {
-		const char *name = (const char *)((uintptr_t)lib->map +
-			lib->macho_strtab_off + sym->n_un.n_strx);
+		const char *name = (const char *)((uintptr_t)lib->map + lib->macho_strtab_off + sym->n_un.n_strx);
 		
 		if (name[0] == '_') {
 			return name + 1;
@@ -75,10 +74,8 @@ void symtab_macho_init(library_info_t *lib)
 			//	NXSwapInt(arch->size),
 			//	NXSwapInt(arch->align));
 			
-			if (NXSwapInt(arch->cputype) == CPU_TYPE_I386 &&
-				NXSwapInt(arch->cpusubtype) == CPU_SUBTYPE_I386_ALL) {
-				lib->map = (void *)((uintptr_t)lib->map +
-					NXSwapInt(arch->offset));
+			if (NXSwapInt(arch->cputype) == CPU_TYPE_I386 && NXSwapInt(arch->cpusubtype) == CPU_SUBTYPE_I386_ALL) {
+				lib->map = (void *)((uintptr_t)lib->map + NXSwapInt(arch->offset));
 				lib->macho_hdr = lib->map;
 				lib->size = NXSwapInt(arch->size);
 				
@@ -177,8 +174,7 @@ void symtab_macho_init(library_info_t *lib)
 			lib->macho_strtab_off   = symtab_cmd->stroff;
 			lib->macho_strtab_size  = symtab_cmd->strsize;
 		} else if (cmd->cmd == LC_DYSYMTAB) {
-			struct dysymtab_command *dysymtab_cmd =
-				(struct dysymtab_command *)cmd;
+			struct dysymtab_command *dysymtab_cmd = (struct dysymtab_command *)cmd;
 			
 			//pr_debug("  ilocalsym:      %08x\n", dysymtab_cmd->ilocalsym);
 			//pr_debug("  nlocalsym:      %08x\n", dysymtab_cmd->nlocalsym);
@@ -208,8 +204,7 @@ void symtab_macho_init(library_info_t *lib)
 }
 
 
-void symtab_macho_foreach(library_info_t *lib,
-	void (*callback)(const symbol_t *))
+void symtab_macho_foreach(library_info_t *lib, void (*callback)(const symbol_t *))
 {
 	uintptr_t sym_off = (uintptr_t)lib->map + lib->macho_symtab_off;
 	for (int i = 0; i < lib->macho_symtab_count; ++i) {
@@ -237,10 +232,10 @@ void symtab_macho_foreach(library_info_t *lib,
 		}
 		
 		symbol_t entry = {
-			.lib  = lib,
-			.addr = macho_get_sym_addr(lib, sym),
-			.size = 0,
-			.name = macho_get_sym_name(lib, sym),
+			.lib            = lib,
+			.addr           = macho_get_sym_addr(lib, sym),
+			.size           = 0,
+			.name           = macho_get_sym_name(lib, sym),
 			.name_demangled = try_demangle_noprefix(entry.name),
 		};
 		callback(&entry);
@@ -260,8 +255,7 @@ void symtab_macho_foreach(library_info_t *lib,
 }
 
 
-bool symtab_macho_lookup_addr(library_info_t *lib, symbol_t *entry,
-	uintptr_t addr)
+bool symtab_macho_lookup_addr(library_info_t *lib, symbol_t *entry, uintptr_t addr)
 {
 	uintptr_t sym_off = (uintptr_t)lib->map + lib->macho_symtab_off;
 	for (int i = 0; i < lib->macho_symtab_count; ++i) {
@@ -273,10 +267,10 @@ bool symtab_macho_lookup_addr(library_info_t *lib, symbol_t *entry,
 		}
 		
 		if (addr == macho_get_sym_addr(lib, sym)) {
-			entry->lib  = lib;
-			entry->addr = addr;
-			entry->size = 0;
-			entry->name = macho_get_sym_name(lib, sym);
+			entry->lib            = lib;
+			entry->addr           = addr;
+			entry->size           = 0;
+			entry->name           = macho_get_sym_name(lib, sym);
 			entry->name_demangled = try_demangle_noprefix(entry->name);
 			
 			return true;
@@ -290,13 +284,10 @@ bool symtab_macho_lookup_addr(library_info_t *lib, symbol_t *entry,
 /* given a particular address, find out if there is a relocation entry for that
  * address, and if so, return some information about the symbol being relocated
  * to the address */
-bool symtab_macho_find_reloc_sym_for_addr(library_info_t *lib, symbol_t *entry,
-	uintptr_t addr)
+bool symtab_macho_find_reloc_sym_for_addr(library_info_t *lib, symbol_t *entry, uintptr_t addr)
 {
 	for (int i = 0; i < lib->macho_ext_reloc_count; ++i) {
-		struct relocation_info *reloc =
-			(struct relocation_info *)((uintptr_t)lib->map +
-			lib->macho_ext_reloc_off) + i;
+		struct relocation_info *reloc = (struct relocation_info *)((uintptr_t)lib->map + lib->macho_ext_reloc_off) + i;
 		
 		//pr_debug("r_address:   %08x\n", reloc->r_address);
 		//pr_debug("r_symbolnum: %06x\n", reloc->r_symbolnum);
@@ -306,13 +297,12 @@ bool symtab_macho_find_reloc_sym_for_addr(library_info_t *lib, symbol_t *entry,
 		//pr_debug("r_type:      %01x\n", reloc->r_type);
 		
 		if (reloc->r_address == addr) {
-			struct nlist *sym =
-				macho_get_sym_by_index(lib, reloc->r_symbolnum);
+			struct nlist *sym = macho_get_sym_by_index(lib, reloc->r_symbolnum);
 			
-			entry->lib  = lib;
-			entry->addr = macho_get_sym_addr(lib, sym);
-			entry->size = 0;
-			entry->name = macho_get_sym_name(lib, sym);
+			entry->lib            = lib;
+			entry->addr           = macho_get_sym_addr(lib, sym);
+			entry->size           = 0;
+			entry->name           = macho_get_sym_name(lib, sym);
 			entry->name_demangled = try_demangle_noprefix(entry->name);
 			
 			return true;

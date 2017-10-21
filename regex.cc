@@ -17,9 +17,7 @@ void r_init(const char *pattern)
 	}
 	
 	filter = new std::basic_regex<char>(pattern,
-		std::regex::icase |
-		std::regex::optimize |
-		std::regex::ECMAScript);
+		std::regex::icase | std::regex::optimize | std::regex::ECMAScript);
 }
 
 
@@ -27,6 +25,5 @@ bool r_match(const char *input)
 {
 	assert(filter != NULL);
 	
-	return std::regex_match(input, *filter,
-		std::regex_constants::match_any);
+	return std::regex_match(input, *filter, std::regex_constants::match_any);
 }

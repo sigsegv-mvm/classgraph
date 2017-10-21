@@ -92,8 +92,7 @@ void lib_init(const char *path)
 	//pr_debug("lib_hook:\n  path '%s'\n  fd %d\n  size %d\n",
 	//	lib->path, lib->fd, lib->size);
 	
-	if ((lib->map = mmap(NULL, lib->size, PROT_READ, MAP_PRIVATE, lib->fd, 0))
-		== MAP_FAILED) {
+	if ((lib->map = mmap(NULL, lib->size, PROT_READ, MAP_PRIVATE, lib->fd, 0)) == MAP_FAILED) {
 		warn("mmap('%s') failed", name);
 		return;
 	}

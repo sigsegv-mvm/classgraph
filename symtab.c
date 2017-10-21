@@ -47,8 +47,7 @@ bool symtab_addr_abs(symbol_t *entry, uintptr_t addr)
 	
 	do
 	{
-		if (addr >= lib->baseaddr &&
-			symtab_lookup_addr(lib, entry, addr - lib->baseaddr)) {
+		if (addr >= lib->baseaddr && symtab_lookup_addr(lib, entry, addr - lib->baseaddr)) {
 			return true;
 		}
 	} while ((lib = lib_next(lib)) != NULL);

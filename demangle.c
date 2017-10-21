@@ -3,8 +3,7 @@
 
 const char *try_demangle(const char *mangled)
 {
-	const char *demangled = cplus_demangle(mangled,
-		DMGL_GNU_V3 | DMGL_TYPES | DMGL_ANSI | DMGL_PARAMS);
+	const char *demangled = cplus_demangle(mangled, DMGL_GNU_V3 | DMGL_TYPES | DMGL_ANSI | DMGL_PARAMS);
 	
 	if (demangled != NULL) {
 		return demangled;

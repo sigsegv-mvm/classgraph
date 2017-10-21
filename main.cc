@@ -28,8 +28,8 @@ std::map<uintptr_t, symbol_t> symcache;
 void get_type_info_addrs(void)
 {
 	__class_type_info     ti_base(NULL);
-	__si_class_type_info  ti_si(NULL, NULL);
-	__vmi_class_type_info ti_vmi(NULL, 0);
+	__si_class_type_info  ti_si  (NULL, NULL);
+	__vmi_class_type_info ti_vmi (NULL, 0);
 	
 	vtable_for__class_type_info     = *((uintptr_t *)&ti_base);
 	vtable_for__si_class_type_info  = *((uintptr_t *)&ti_si);
@@ -71,46 +71,36 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 		} else if (ti_vtable == vtable_for__vmi_class_type_info) {
 			type_char = '#';
 		} else {
-			pr_warn("could not decipher typeinfo vtable ptr! (%08x)\n",
-				ti_vtable);
+			pr_warn("could not decipher typeinfo vtable ptr! (%08x)\n", ti_vtable);
 		}
 	}
 	if (sym->lib->is_macho) {
-		rtti = (const __class_type_info *)((uintptr_t)sym->lib->map +
-			sym->addr);
+		rtti = (const __class_type_info *)((uintptr_t)sym->lib->map + sym->addr);
 		
 		symbol_t rsym;
 		if (symtab_macho_find_reloc_sym_for_addr(sym->lib, &rsym, sym->addr)) {
-			if (strcmp(rsym.name,
-				"_ZTVN10__cxxabiv117__class_type_infoE") == 0) {
+			if (strcmp(rsym.name, "_ZTVN10__cxxabiv117__class_type_infoE") == 0) {
 				type_char = '-';
-			} else if (strcmp(rsym.name,
-				"_ZTVN10__cxxabiv120__si_class_type_infoE") == 0) {
+			} else if (strcmp(rsym.name, "_ZTVN10__cxxabiv120__si_class_type_infoE") == 0) {
 				type_char = '+';
-			} else if (strcmp(rsym.name,
-				"_ZTVN10__cxxabiv121__vmi_class_type_infoE") == 0) {
+			} else if (strcmp(rsym.name, "_ZTVN10__cxxabiv121__vmi_class_type_infoE") == 0) {
 				type_char = '#';
 			} else {
-				pr_warn("whoa, got unexpected reloc symbol:\n"
-					"  %08x '%s'\n",
-					rsym.addr, rsym.name_demangled);
+				pr_warn("whoa, got unexpected reloc symbol:\n  %08x '%s'\n", rsym.addr, rsym.name_demangled);
 			}
 		} else {
-			pr_warn("could not find reloc entry for rtti! (%08x)\n",
-				sym->addr);
+			pr_warn("could not find reloc entry for rtti! (%08x)\n", sym->addr);
 		}
 	}
 	
-	printf("%s%s[%c] ", (level == 0 ? "\n" : ""),
-		indent, type_char);
+	printf("%s%s[%c] ", (level == 0 ? "\n" : ""), indent, type_char);
 	printf("%s\n", sym->name_demangled);
 	
 	if (type_char == '+') {
 		auto rtti_si = reinterpret_cast<const __si_class_type_info *>(rtti);
 		
 		symbol_t sym_base;
-		if (symtab_addr_abs(&sym_base,
-			(uintptr_t)(rtti_si->__base_type))) {
+		if (symtab_addr_abs(&sym_base, (uintptr_t)(rtti_si->__base_type))) {
 			recurse_typeinfo(level + 1, &sym_base);
 		} else {
 			pr_warn("could not find typeinfo symbol for base!\n");
@@ -122,8 +112,7 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 			auto *baseinfo = rtti_vmi->__base_info + i;
 			
 			ptrdiff_t offset = baseinfo->__offset();
-			unsigned long flags = (unsigned long)baseinfo->__offset_flags &
-				~(ULONG_MAX << __base_class_type_info::__offset_shift);
+			unsigned long flags = (unsigned long)baseinfo->__offset_flags & ~(ULONG_MAX << __base_class_type_info::__offset_shift);
 			
 			char str_flags[1024];
 			str_flags[0] = '\0';
@@ -146,24 +135,19 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 				strlcat(str_flags, "HWM", sizeof(str_flags));
 			}
 			
-			printf("%s %u: ",
-				indent, i);
-			printf("+%06x %s\n",
-				offset, str_flags);
+			printf("%s %u: ", indent, i);
+			printf("+%06x %s\n", offset, str_flags);
 			
 			symbol_t sym_base;
 			
-			auto cache_entry =
-				symcache.find((uintptr_t)(baseinfo->__base_type));
+			auto cache_entry = symcache.find((uintptr_t)(baseinfo->__base_type));
 			if (cache_entry != symcache.end()) {
 				sym_base = (*cache_entry).second;
 				recurse_typeinfo(level + 1, &sym_base);
-			} else if (symtab_addr_abs(&sym_base,
-				(uintptr_t)(baseinfo->__base_type))) {
+			} else if (symtab_addr_abs(&sym_base, (uintptr_t)(baseinfo->__base_type))) {
 				recurse_typeinfo(level + 1, &sym_base);
 			} else {
-				pr_warn("could not find typeinfo symbol for base #%u!\n",
-					i);
+				pr_warn("could not find typeinfo symbol for base #%u!\n", i);
 			}
 		}
 	}
