@@ -17,6 +17,14 @@
 #include <link.h>
 #include <math.h>
 
+/* c++ standard library */
+#ifdef __cplusplus
+#include <climits>
+#include <regex>
+#include <set>
+#include <map>
+#endif
+
 /* posix */
 #include <unistd.h>
 #include <fcntl.h>
