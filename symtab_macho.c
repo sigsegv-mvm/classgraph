@@ -98,6 +98,9 @@ void symtab_macho_init(library_info_t *lib)
 	//pr_debug("flags:      %08x\n", lib->macho_hdr->flags);
 	
 	
+	uint32_t nsegs = 0;
+	struct segment_command *segs[16];
+	
 	lib->macho_sect_count = 0;
 	
 	uintptr_t cmd_addr = (uintptr_t)lib->map + sizeof(struct mach_header);
@@ -105,10 +108,56 @@ void symtab_macho_init(library_info_t *lib)
 		struct load_command *cmd = (struct load_command *)cmd_addr;
 		
 		//const char *cmd_name = "???";
-		//if (cmd->cmd == LC_SEGMENT) {
-		//	cmd_name = "LC_SEGMENT";
-		//} else if (cmd->cmd == LC_SYMTAB) {
-		//	cmd_name = "LC_SYMTAB";
+		//switch (cmd->cmd & ~LC_REQ_DYLD) {
+		//case LC_SEGMENT:                  cmd_name = "LC_SEGMENT";                  break;
+		//case LC_SYMTAB:                   cmd_name = "LC_SYMTAB";                   break;
+		//case LC_SYMSEG:                   cmd_name = "LC_SYMSEG";                   break;
+		//case LC_THREAD:                   cmd_name = "LC_THREAD";                   break;
+		//case LC_UNIXTHREAD:               cmd_name = "LC_UNIXTHREAD";               break;
+		//case LC_LOADFVMLIB:               cmd_name = "LC_LOADFVMLIB";               break;
+		//case LC_IDFVMLIB:                 cmd_name = "LC_IDFVMLIB";                 break;
+		//case LC_IDENT:                    cmd_name = "LC_IDENT";                    break;
+		//case LC_FVMFILE:                  cmd_name = "LC_FVMFILE";                  break;
+		//case LC_PREPAGE:                  cmd_name = "LC_PREPAGE";                  break;
+		//case LC_DYSYMTAB:                 cmd_name = "LC_DYSYMTAB";                 break;
+		//case LC_LOAD_DYLIB:               cmd_name = "LC_LOAD_DYLIB";               break;
+		//case LC_ID_DYLIB:                 cmd_name = "LC_ID_DYLIB";                 break;
+		//case LC_LOAD_DYLINKER:            cmd_name = "LC_LOAD_DYLINKER";            break;
+		//case LC_ID_DYLINKER:              cmd_name = "LC_ID_DYLINKER";              break;
+		//case LC_PREBOUND_DYLIB:           cmd_name = "LC_PREBOUND_DYLIB";           break;
+		//case LC_ROUTINES:                 cmd_name = "LC_ROUTINES";                 break;
+		//case LC_SUB_FRAMEWORK:            cmd_name = "LC_SUB_FRAMEWORK";            break;
+		//case LC_SUB_UMBRELLA:             cmd_name = "LC_SUB_UMBRELLA";             break;
+		//case LC_SUB_CLIENT:               cmd_name = "LC_SUB_CLIENT";               break;
+		//case LC_SUB_LIBRARY:              cmd_name = "LC_SUB_LIBRARY";              break;
+		//case LC_TWOLEVEL_HINTS:           cmd_name = "LC_TWOLEVEL_HINTS";           break;
+		//case LC_PREBIND_CKSUM:            cmd_name = "LC_PREBIND_CKSUM";            break;
+		//case LC_LOAD_WEAK_DYLIB:          cmd_name = "LC_LOAD_WEAK_DYLIB";          break;
+		//case LC_SEGMENT_64:               cmd_name = "LC_SEGMENT_64";               break;
+		//case LC_ROUTINES_64:              cmd_name = "LC_ROUTINES_64";              break;
+		//case LC_UUID:                     cmd_name = "LC_UUID";                     break;
+		//case LC_RPATH:                    cmd_name = "LC_RPATH";                    break;
+		//case LC_CODE_SIGNATURE:           cmd_name = "LC_CODE_SIGNATURE";           break;
+		//case LC_SEGMENT_SPLIT_INFO:       cmd_name = "LC_SEGMENT_SPLIT_INFO";       break;
+		//case LC_REEXPORT_DYLIB:           cmd_name = "LC_REEXPORT_DYLIB";           break;
+		//case LC_LAZY_LOAD_DYLIB:          cmd_name = "LC_LAZY_LOAD_DYLIB";          break;
+		//case LC_ENCRYPTION_INFO:          cmd_name = "LC_ENCRYPTION_INFO";          break;
+		//case LC_DYLD_INFO:                cmd_name = "LC_DYLD_INFO";                break;
+		//case LC_DYLD_INFO_ONLY:           cmd_name = "LC_DYLD_INFO_ONLY";           break;
+		//case LC_LOAD_UPWARD_DYLIB:        cmd_name = "LC_LOAD_UPWARD_DYLIB";        break;
+		//case LC_VERSION_MIN_MACOSX:       cmd_name = "LC_VERSION_MIN_MACOSX";       break;
+		//case LC_VERSION_MIN_IPHONEOS:     cmd_name = "LC_VERSION_MIN_IPHONEOS";     break;
+		//case LC_FUNCTION_STARTS:          cmd_name = "LC_FUNCTION_STARTS";          break;
+		//case LC_DYLD_ENVIRONMENT:         cmd_name = "LC_DYLD_ENVIRONMENT";         break;
+		//case LC_MAIN:                     cmd_name = "LC_MAIN";                     break;
+		//case LC_DATA_IN_CODE:             cmd_name = "LC_DATA_IN_CODE";             break;
+		//case LC_SOURCE_VERSION:           cmd_name = "LC_SOURCE_VERSION";           break;
+		//case LC_DYLIB_CODE_SIGN_DRS:      cmd_name = "LC_DYLIB_CODE_SIGN_DRS";      break;
+		//case LC_ENCRYPTION_INFO_64:       cmd_name = "LC_ENCRYPTION_INFO_64";       break;
+		//case LC_LINKER_OPTION:            cmd_name = "LC_LINKER_OPTION";            break;
+		//case LC_LINKER_OPTIMIZATION_HINT: cmd_name = "LC_LINKER_OPTIMIZATION_HINT"; break;
+		//case LC_VERSION_MIN_TVOS:         cmd_name = "LC_VERSION_MIN_TVOS";         break;
+		//case LC_VERSION_MIN_WATCHOS:      cmd_name = "LC_VERSION_MIN_WATCHOS";      break;
 		//}
 		
 		//pr_debug("load_command %d:\n", i);
@@ -117,6 +166,8 @@ void symtab_macho_init(library_info_t *lib)
 		
 		if (cmd->cmd == LC_SEGMENT) {
 			struct segment_command *seg_cmd = (struct segment_command *)cmd;
+			
+			segs[nsegs++] = seg_cmd;
 			
 			//pr_debug("  segname:   '%s'\n", seg_cmd->segname);
 			//pr_debug("  vmaddr:    %08x\n", seg_cmd->vmaddr);
@@ -197,9 +248,42 @@ void symtab_macho_init(library_info_t *lib)
 			
 			lib->macho_ext_reloc_off   = dysymtab_cmd->extreloff;
 			lib->macho_ext_reloc_count = dysymtab_cmd->nextrel;
+		} else if (cmd->cmd == LC_DYLD_INFO || cmd->cmd == LC_DYLD_INFO_ONLY) {
+			struct dyld_info_command *dyldinfo_cmd = (struct dyld_info_command *)cmd;
+			
+			//pr_debug("  rebase_off:     %08x\n", dyldinfo_cmd->rebase_off);
+			//pr_debug("  rebase_size:    %08x\n", dyldinfo_cmd->rebase_size);
+			//pr_debug("  bind_off:       %08x\n", dyldinfo_cmd->bind_off);
+			//pr_debug("  bind_size:      %08x\n", dyldinfo_cmd->bind_size);
+			//pr_debug("  weak_bind_off:  %08x\n", dyldinfo_cmd->weak_bind_off);
+			//pr_debug("  weak_bind_size: %08x\n", dyldinfo_cmd->weak_bind_size);
+			//pr_debug("  lazy_bind_off:  %08x\n", dyldinfo_cmd->lazy_bind_off);
+			//pr_debug("  lazy_bind_size: %08x\n", dyldinfo_cmd->lazy_bind_size);
+			//pr_debug("  export_off:     %08x\n", dyldinfo_cmd->export_off);
+			//pr_debug("  export_size:    %08x\n", dyldinfo_cmd->export_size);
+			
+			lib->macho_has_dyld_info  = true;
+			lib->macho_rebase_off     = dyldinfo_cmd->rebase_off;
+			lib->macho_rebase_size    = dyldinfo_cmd->rebase_size;
+			lib->macho_bind_off       = dyldinfo_cmd->bind_off;
+			lib->macho_bind_size      = dyldinfo_cmd->bind_size;
+			lib->macho_weak_bind_off  = dyldinfo_cmd->weak_bind_off;
+			lib->macho_weak_bind_size = dyldinfo_cmd->weak_bind_size;
+			lib->macho_lazy_bind_off  = dyldinfo_cmd->lazy_bind_off;
+			lib->macho_lazy_bind_size = dyldinfo_cmd->lazy_bind_size;
+			lib->macho_export_off     = dyldinfo_cmd->export_off;
+			lib->macho_export_size    = dyldinfo_cmd->export_size;
 		}
 		
 		cmd_addr += cmd->cmdsize;
+	}
+	
+	if (lib->macho_has_dyld_info) {
+		const uint8_t *start = (const uint8_t *)((uintptr_t)lib->map + lib->macho_bind_off);
+		const uint8_t *end   = start + lib->macho_bind_size;
+		get_dyld_bind_info(start, end, NULL, 0, segs, nsegs, NULL, 0, &lib->macho_dbi, &lib->macho_ndbi);
+		
+	//	print_dyld_bind_info(lib->macho_dbi, lib->macho_ndbi);
 	}
 }
 
@@ -260,6 +344,7 @@ void symtab_macho_foreach(library_info_t *lib, void (*callback)(const symbol_t *
  * to the address */
 bool symtab_macho_find_reloc_sym_for_addr(library_info_t *lib, symbol_t *entry, uintptr_t addr)
 {
+	/* try old reloc info first */
 	for (int i = 0; i < lib->macho_ext_reloc_count; ++i) {
 		struct relocation_info *reloc = (struct relocation_info *)((uintptr_t)lib->map + lib->macho_ext_reloc_off) + i;
 		
@@ -280,6 +365,23 @@ bool symtab_macho_find_reloc_sym_for_addr(library_info_t *lib, symbol_t *entry, 
 			entry->name_demangled = try_demangle_noprefix(entry->name);
 			
 			return true;
+		}
+	}
+	
+	/* try new compressed dyld bind info next */
+	if (lib->macho_has_dyld_info) {
+		for (uint64_t i = 0; i < lib->macho_ndbi; ++i) {
+			struct dyld_bind_info *info = lib->macho_dbi + i;
+			
+			if (info->address == addr) {
+				entry->lib            = lib;
+				entry->addr           = info->address + info->addend;
+				entry->size           = 0;
+				entry->name           = info->symbolname + (info->symbolname[0] == '_' ? 1 : 0);
+				entry->name_demangled = try_demangle_noprefix(entry->name);
+				
+				return true;
+			}
 		}
 	}
 	

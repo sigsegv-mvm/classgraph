@@ -29,15 +29,28 @@ typedef struct {
 	int         elf_symtab_count;
 	
 	/* mach-o symtab stuff */
-	struct mach_header *macho_hdr;
-	int                 macho_sect_count;
-	struct section     *macho_sects[256];
-	uint32_t            macho_symtab_off;
-	uint32_t            macho_symtab_count;
-	uint32_t            macho_strtab_off;
-	uint32_t            macho_strtab_size;
-	uint32_t            macho_ext_reloc_off;
-	uint32_t            macho_ext_reloc_count;
+	struct mach_header    *macho_hdr;
+	int                    macho_sect_count;      // LC_SEGMENT
+	struct section        *macho_sects[256];      // LC_SEGMENT
+	uint32_t               macho_symtab_off;      // LC_SYMTAB
+	uint32_t               macho_symtab_count;    // LC_SYMTAB
+	uint32_t               macho_strtab_off;      // LC_SYMTAB
+	uint32_t               macho_strtab_size;     // LC_SYMTAB
+	uint32_t               macho_ext_reloc_off;   // LC_DYSYMTAB
+	uint32_t               macho_ext_reloc_count; // LC_DYSYMTAB
+	bool                   macho_has_dyld_info;
+	uint32_t               macho_rebase_off;      // LC_DYLD_INFO
+	uint32_t               macho_rebase_size;     // LC_DYLD_INFO
+	uint32_t               macho_bind_off;        // LC_DYLD_INFO
+	uint32_t               macho_bind_size;       // LC_DYLD_INFO
+	uint32_t               macho_weak_bind_off;   // LC_DYLD_INFO
+	uint32_t               macho_weak_bind_size;  // LC_DYLD_INFO
+	uint32_t               macho_lazy_bind_off;   // LC_DYLD_INFO
+	uint32_t               macho_lazy_bind_size;  // LC_DYLD_INFO
+	uint32_t               macho_export_off;      // LC_DYLD_INFO
+	uint32_t               macho_export_size;     // LC_DYLD_INFO
+	uint64_t               macho_ndbi;
+	struct dyld_bind_info *macho_dbi;
 	
 	/* section info */
 	uintptr_t text_off;

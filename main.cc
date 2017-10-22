@@ -88,11 +88,11 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 		
 		symbol_t rsym;
 		if (symtab_macho_find_reloc_sym_for_addr(sym->lib, &rsym, sym->addr)) {
-			if (strcmp(rsym.name, "_ZTVN10__cxxabiv117__class_type_infoE") == 0) {
+			if (strcmp(rsym.name_demangled, "__cxxabiv1::__class_type_info") == 0) {
 				type_char = '-';
-			} else if (strcmp(rsym.name, "_ZTVN10__cxxabiv120__si_class_type_infoE") == 0) {
+			} else if (strcmp(rsym.name_demangled, "__cxxabiv1::__si_class_type_info") == 0) {
 				type_char = '+';
-			} else if (strcmp(rsym.name, "_ZTVN10__cxxabiv121__vmi_class_type_infoE") == 0) {
+			} else if (strcmp(rsym.name_demangled, "__cxxabiv1::__vmi_class_type_info") == 0) {
 				type_char = '#';
 			} else {
 				pr_warn("whoa, got unexpected reloc symbol:\n  %08x '%s'\n", rsym.addr, rsym.name_demangled);
