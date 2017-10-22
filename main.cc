@@ -7,11 +7,13 @@ using __cxxabiv1::__base_class_type_info;
 using __cxxabiv1::__class_type_info;
 using __cxxabiv1::__si_class_type_info;
 using __cxxabiv1::__vmi_class_type_info;
+using __cxxabiv1::__pointer_type_info;
 
 
 static uintptr_t vtable_for__class_type_info;
 static uintptr_t vtable_for__si_class_type_info;
 static uintptr_t vtable_for__vmi_class_type_info;
+static uintptr_t vtable_for__pointer_type_info;
 
 
 std::set<symbol_t, bool (*)(const symbol_t&, const symbol_t&)> syms([](const symbol_t& lhs, const symbol_t& rhs){ return (strcmp(lhs.name_demangled, rhs.name_demangled) < 0); });
@@ -39,14 +41,17 @@ void get_type_info_addrs(void)
 	__class_type_info     ti_base(NULL);
 	__si_class_type_info  ti_si  (NULL, NULL);
 	__vmi_class_type_info ti_vmi (NULL, 0);
+	__pointer_type_info   ti_ptr (NULL, 0, NULL);
 	
 	vtable_for__class_type_info     = *((uintptr_t *)&ti_base);
 	vtable_for__si_class_type_info  = *((uintptr_t *)&ti_si);
 	vtable_for__vmi_class_type_info = *((uintptr_t *)&ti_vmi);
+	vtable_for__pointer_type_info   = *((uintptr_t *)&ti_ptr);
 	
 	assert(vtable_for__class_type_info     != 0);
 	assert(vtable_for__si_class_type_info  != 0);
 	assert(vtable_for__vmi_class_type_info != 0);
+	assert(vtable_for__pointer_type_info   != 0);
 }
 
 
@@ -79,6 +84,8 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 			type_char = '+';
 		} else if (ti_vtable == vtable_for__vmi_class_type_info) {
 			type_char = '#';
+		} else if (ti_vtable == vtable_for__pointer_type_info) {
+			type_char = '*';
 		} else {
 			pr_warn("could not decipher typeinfo vtable ptr! (%08x)\n", ti_vtable);
 		}
@@ -94,6 +101,8 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 				type_char = '+';
 			} else if (strcmp(rsym.name_demangled, "__cxxabiv1::__vmi_class_type_info") == 0) {
 				type_char = '#';
+			} else if (strcmp(rsym.name_demangled, "__cxxabiv1::__pointer_type_info") == 0) {
+				type_char = '*';
 			} else {
 				pr_warn("whoa, got unexpected reloc symbol:\n  %08x '%s'\n", rsym.addr, rsym.name_demangled);
 			}
