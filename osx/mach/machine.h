@@ -1,31 +1,29 @@
 /*
- * Copyright (c) 2000-2005 Apple Computer, Inc. All rights reserved.
+ * Copyright (c) 2000-2007 Apple Computer, Inc. All rights reserved.
  *
- * @APPLE_LICENSE_OSREFERENCE_HEADER_START@
+ * @APPLE_OSREFERENCE_LICENSE_HEADER_START@
  * 
- * This file contains Original Code and/or Modifications of Original Code 
- * as defined in and that are subject to the Apple Public Source License 
- * Version 2.0 (the 'License'). You may not use this file except in 
- * compliance with the License.  The rights granted to you under the 
- * License may not be used to create, or enable the creation or 
- * redistribution of, unlawful or unlicensed copies of an Apple operating 
- * system, or to circumvent, violate, or enable the circumvention or 
- * violation of, any terms of an Apple operating system software license 
- * agreement.
- *
- * Please obtain a copy of the License at 
- * http://www.opensource.apple.com/apsl/ and read it before using this 
- * file.
- *
- * The Original Code and all software distributed under the License are 
- * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER 
- * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES, 
- * INCLUDING WITHOUT LIMITATION, ANY WARRANTIES OF MERCHANTABILITY, 
- * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT. 
- * Please see the License for the specific language governing rights and 
+ * This file contains Original Code and/or Modifications of Original Code
+ * as defined in and that are subject to the Apple Public Source License
+ * Version 2.0 (the 'License'). You may not use this file except in
+ * compliance with the License. The rights granted to you under the License
+ * may not be used to create, or enable the creation or redistribution of,
+ * unlawful or unlicensed copies of an Apple operating system, or to
+ * circumvent, violate, or enable the circumvention or violation of, any
+ * terms of an Apple operating system software license agreement.
+ * 
+ * Please obtain a copy of the License at
+ * http://www.opensource.apple.com/apsl/ and read it before using this file.
+ * 
+ * The Original Code and all software distributed under the License are
+ * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
+ * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
+ * INCLUDING WITHOUT LIMITATION, ANY WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
+ * Please see the License for the specific language governing rights and
  * limitations under the License.
- *
- * @APPLE_LICENSE_OSREFERENCE_HEADER_END@
+ * 
+ * @APPLE_OSREFERENCE_LICENSE_HEADER_END@
  */
 /* 
  * Mach Operating System
@@ -62,6 +60,8 @@
 #ifndef	_MACH_MACHINE_H_
 #define _MACH_MACHINE_H_
 
+#ifndef __ASSEMBLER__
+
 #include <stdint.h>
 #include <mach/machine/vm_types.h>
 #include <mach/boolean.h>
@@ -77,51 +77,6 @@ typedef integer_t	cpu_threadtype_t;
 #define CPU_STATE_IDLE		2
 #define CPU_STATE_NICE		3
 
-#ifdef	KERNEL_PRIVATE
-
-#include <sys/cdefs.h>
-
-__BEGIN_DECLS
-cpu_type_t			cpu_type(void);
-
-cpu_subtype_t		cpu_subtype(void);
-
-cpu_threadtype_t	cpu_threadtype(void);
-__END_DECLS
-
-#ifdef	MACH_KERNEL_PRIVATE
-
-struct machine_info {
-	integer_t	major_version;		/* kernel major version id */
-	integer_t	minor_version;		/* kernel minor version id */
-	integer_t	max_cpus;			/* max number of CPUs possible */
-	integer_t	avail_cpus;			/* number of CPUs now available */
-	uint32_t	memory_size;		/* size of memory in bytes, capped at 2 GB */
-	uint64_t	max_mem;			/* actual size of physical memory */
-	integer_t	physical_cpu;		/* number of physical CPUs now available */
-	integer_t	physical_cpu_max;	/* max number of physical CPUs possible */
-	integer_t	logical_cpu;		/* number of logical cpu now available */
-	integer_t	logical_cpu_max;	/* max number of physical CPUs possible */
-};
-
-typedef struct machine_info	*machine_info_t;
-typedef struct machine_info	machine_info_data_t;
-
-extern struct machine_info	machine_info;
-
-__BEGIN_DECLS
-cpu_type_t			slot_type(
-						int		slot_num);
-
-cpu_subtype_t		slot_subtype(
-						int		slot_num);
-
-cpu_threadtype_t	slot_threadtype(
-						int		slot_num);
-__END_DECLS
-
-#endif	/* MACH_KERNEL_PRIVATE */
-#endif	/* KERNEL_PRIVATE */
 
 
 /*
@@ -150,7 +105,8 @@ __END_DECLS
 /* skip 			((cpu_type_t) 9)	*/
 #define CPU_TYPE_MC98000	((cpu_type_t) 10)
 #define CPU_TYPE_HPPA           ((cpu_type_t) 11)
-/* skip CPU_TYPE_ARM		((cpu_type_t) 12)	*/
+#define CPU_TYPE_ARM		((cpu_type_t) 12)
+#define CPU_TYPE_ARM64          (CPU_TYPE_ARM | CPU_ARCH_ABI64)
 #define CPU_TYPE_MC88000	((cpu_type_t) 13)
 #define CPU_TYPE_SPARC		((cpu_type_t) 14)
 #define CPU_TYPE_I860		((cpu_type_t) 15)
@@ -164,6 +120,13 @@ __END_DECLS
  *	dependent directory, so that any program can get all definitions
  *	regardless of where is it compiled).
  */
+
+/*
+ * Capability bits used in the definition of cpu_subtype.
+ */
+#define CPU_SUBTYPE_MASK	0xff000000	/* mask for feature flags */
+#define CPU_SUBTYPE_LIB64	0x80000000	/* 64 bit libraries */
+
 
 /*
  *	Object files that are hand-crafted to run on any
@@ -268,6 +231,7 @@ __END_DECLS
 #define CPU_SUBTYPE_X86_ALL		((cpu_subtype_t)3)
 #define CPU_SUBTYPE_X86_64_ALL		((cpu_subtype_t)3)
 #define CPU_SUBTYPE_X86_ARCH1		((cpu_subtype_t)4)
+#define CPU_SUBTYPE_X86_64_H		((cpu_subtype_t)8)	/* Haswell feature subset */
 
 
 #define CPU_THREADTYPE_INTEL_HTT	((cpu_threadtype_t) 1)
@@ -336,19 +300,71 @@ __END_DECLS
 #define CPU_SUBTYPE_POWERPC_970		((cpu_subtype_t) 100)
 
 /*
- *      CPU families (sysctl hw.cpufamily)
+ *	ARM subtypes
+ */
+#define CPU_SUBTYPE_ARM_ALL             ((cpu_subtype_t) 0)
+#define CPU_SUBTYPE_ARM_V4T             ((cpu_subtype_t) 5)
+#define CPU_SUBTYPE_ARM_V6              ((cpu_subtype_t) 6)
+#define CPU_SUBTYPE_ARM_V5TEJ           ((cpu_subtype_t) 7)
+#define CPU_SUBTYPE_ARM_XSCALE		((cpu_subtype_t) 8)
+#define CPU_SUBTYPE_ARM_V7		((cpu_subtype_t) 9)
+#define CPU_SUBTYPE_ARM_V7F		((cpu_subtype_t) 10) /* Cortex A9 */
+#define CPU_SUBTYPE_ARM_V7S		((cpu_subtype_t) 11) /* Swift */
+#define CPU_SUBTYPE_ARM_V7K		((cpu_subtype_t) 12)
+#define CPU_SUBTYPE_ARM_V6M		((cpu_subtype_t) 14) /* Not meant to be run under xnu */
+#define CPU_SUBTYPE_ARM_V7M		((cpu_subtype_t) 15) /* Not meant to be run under xnu */
+#define CPU_SUBTYPE_ARM_V7EM		((cpu_subtype_t) 16) /* Not meant to be run under xnu */
+
+#define CPU_SUBTYPE_ARM_V8		((cpu_subtype_t) 13)
+
+/*
+ *  ARM64 subtypes
+ */
+#define CPU_SUBTYPE_ARM64_ALL           ((cpu_subtype_t) 0)
+#define CPU_SUBTYPE_ARM64_V8            ((cpu_subtype_t) 1)
+
+#endif /* !__ASSEMBLER__ */
+
+/*
+ *	CPU families (sysctl hw.cpufamily)
  *
+ * These are meant to identify the CPU's marketing name - an
+ * application can map these to (possibly) localized strings.
  * NB: the encodings of the CPU families are intentionally arbitrary.
  * There is no ordering, and you should never try to deduce whether
  * or not some feature is available based on the family.
  * Use feature flags (eg, hw.optional.altivec) to test for optional
  * functionality.
  */
-#define CPUFAMILY_UNKNOWN    0
-#define CPUFAMILY_POWERPC_G3 0xcee41549
-#define CPUFAMILY_POWERPC_G4 0x77c184ae
-#define CPUFAMILY_POWERPC_G5 0xed76d8aa
-#define CPUFAMILY_INTEL_6_14 0x73d67300  /* Intel Core Solo and Intel Core Duo (32-bit Pentium-M with SSE3) */
-#define CPUFAMILY_INTEL_6_15 0x426f69ef  /* Intel Core 2 */
+#define CPUFAMILY_UNKNOWN   		0
+#define CPUFAMILY_POWERPC_G3		0xcee41549
+#define CPUFAMILY_POWERPC_G4		0x77c184ae
+#define CPUFAMILY_POWERPC_G5		0xed76d8aa
+#define CPUFAMILY_INTEL_6_13		0xaa33392b
+#define CPUFAMILY_INTEL_PENRYN		0x78ea4fbc
+#define CPUFAMILY_INTEL_NEHALEM		0x6b5a4cd2
+#define CPUFAMILY_INTEL_WESTMERE	0x573b5eec
+#define CPUFAMILY_INTEL_SANDYBRIDGE	0x5490b78c
+#define CPUFAMILY_INTEL_IVYBRIDGE	0x1f65e835
+#define CPUFAMILY_INTEL_HASWELL		0x10b282dc
+#define CPUFAMILY_INTEL_BROADWELL	0x582ed09c
+#define CPUFAMILY_INTEL_SKYLAKE		0x37fc219f
+#define CPUFAMILY_ARM_9			0xe73283ae
+#define CPUFAMILY_ARM_11		0x8ff620d8
+#define CPUFAMILY_ARM_XSCALE		0x53b005f5
+#define CPUFAMILY_ARM_12                0xbd1b0ae9
+#define CPUFAMILY_ARM_13		0x0cc90e64
+#define CPUFAMILY_ARM_14		0x96077ef1
+#define CPUFAMILY_ARM_15		0xa8511bca
+#define CPUFAMILY_ARM_SWIFT 		0x1e2d6381
+#define CPUFAMILY_ARM_CYCLONE		0x37a09642
+#define CPUFAMILY_ARM_TYPHOON		0x2c91a47e
+#define CPUFAMILY_ARM_TWISTER		0x92fb37c8
+#define CPUFAMILY_ARM_HURRICANE		0x67ceee93
+
+/* The following synonyms are deprecated: */
+#define CPUFAMILY_INTEL_6_23	CPUFAMILY_INTEL_PENRYN
+#define CPUFAMILY_INTEL_6_26	CPUFAMILY_INTEL_NEHALEM
+
 
 #endif	/* _MACH_MACHINE_H_ */

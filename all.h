@@ -55,6 +55,7 @@
 #include <gelf.h>
 
 /* apple osx */
+#define __LITTLE_ENDIAN__
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
 #include <mach-o/reloc.h>

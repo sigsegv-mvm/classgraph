@@ -1,31 +1,29 @@
 /*
- * Copyright (c) 2000-2004 Apple Computer, Inc. All rights reserved.
+ * Copyright (c) 2000-2016 Apple Computer, Inc. All rights reserved.
  *
- * @APPLE_LICENSE_OSREFERENCE_HEADER_START@
+ * @APPLE_OSREFERENCE_LICENSE_HEADER_START@
  * 
- * This file contains Original Code and/or Modifications of Original Code 
- * as defined in and that are subject to the Apple Public Source License 
- * Version 2.0 (the 'License'). You may not use this file except in 
- * compliance with the License.  The rights granted to you under the 
- * License may not be used to create, or enable the creation or 
- * redistribution of, unlawful or unlicensed copies of an Apple operating 
- * system, or to circumvent, violate, or enable the circumvention or 
- * violation of, any terms of an Apple operating system software license 
- * agreement.
- *
- * Please obtain a copy of the License at 
- * http://www.opensource.apple.com/apsl/ and read it before using this 
- * file.
- *
- * The Original Code and all software distributed under the License are 
- * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER 
- * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES, 
- * INCLUDING WITHOUT LIMITATION, ANY WARRANTIES OF MERCHANTABILITY, 
- * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT. 
- * Please see the License for the specific language governing rights and 
+ * This file contains Original Code and/or Modifications of Original Code
+ * as defined in and that are subject to the Apple Public Source License
+ * Version 2.0 (the 'License'). You may not use this file except in
+ * compliance with the License. The rights granted to you under the License
+ * may not be used to create, or enable the creation or redistribution of,
+ * unlawful or unlicensed copies of an Apple operating system, or to
+ * circumvent, violate, or enable the circumvention or violation of, any
+ * terms of an Apple operating system software license agreement.
+ * 
+ * Please obtain a copy of the License at
+ * http://www.opensource.apple.com/apsl/ and read it before using this file.
+ * 
+ * The Original Code and all software distributed under the License are
+ * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
+ * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
+ * INCLUDING WITHOUT LIMITATION, ANY WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
+ * Please see the License for the specific language governing rights and
  * limitations under the License.
- *
- * @APPLE_LICENSE_OSREFERENCE_HEADER_END@
+ * 
+ * @APPLE_OSREFERENCE_LICENSE_HEADER_END@
  */
 /*
  * @OSF_COPYRIGHT@
@@ -72,6 +70,9 @@
 #ifndef	ASSEMBLER
 
 #include <i386/_types.h>
+#if 0 // NOT NEEDED BY CLASSGRAPH
+#include <mach/i386/vm_param.h>
+#endif
 #include <stdint.h>
 
 /*
@@ -126,32 +127,12 @@ typedef uint64_t		mach_vm_address_t;
 typedef uint64_t		mach_vm_offset_t;
 typedef uint64_t		mach_vm_size_t;
 
-/* LP64todo - convert these over for good */
-#if 1 
 typedef uint64_t		vm_map_offset_t;
 typedef uint64_t		vm_map_address_t;
 typedef uint64_t		vm_map_size_t;
-#else
-typedef uint32_t		vm_map_offset_t;
-typedef uint32_t		vm_map_address_t;
-typedef uint32_t		vm_map_size_t;
-#endif
 
-#ifdef	MACH_KERNEL_PRIVATE
+typedef mach_vm_address_t	mach_port_context_t;
 
-#ifdef	VM32_SUPPORT
-
-/*
- * These are types used internal to Mach to implement the
- * legacy 32-bit VM APIs published by the kernel.
- */
-typedef uint32_t		vm32_address_t;
-typedef uint32_t		vm32_offset_t;
-typedef uint32_t		vm32_size_t;
-
-#endif	/* VM32_SUPPORT */
-
-#endif	/* MACH_KERNEL_PRIVATE */
 
 #endif	/* ASSEMBLER */
 

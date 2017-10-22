@@ -78,7 +78,7 @@ struct nlist {
 #ifndef __LP64__
 		char *n_name;	/* for use when in-core */
 #endif
-		int32_t n_strx;	/* index into the string table */
+		uint32_t n_strx;	/* index into the string table */
 	} n_un;
 	uint8_t n_type;		/* type flag, see below */
 	uint8_t n_sect;		/* section number or NO_SECT */
@@ -214,8 +214,10 @@ struct nlist_64 {
  * determined by the static link editor.  Which library an undefined symbol is
  * bound to is recorded by the static linker in the high 8 bits of the n_desc
  * field using the SET_LIBRARY_ORDINAL macro below.  The ordinal recorded
- * references the libraries listed in the Mach-O's LC_LOAD_DYLIB load commands
- * in the order they appear in the headers.   The library ordinals start from 1.
+ * references the libraries listed in the Mach-O's LC_LOAD_DYLIB,
+ * LC_LOAD_WEAK_DYLIB, LC_REEXPORT_DYLIB, LC_LOAD_UPWARD_DYLIB, and
+ * LC_LAZY_LOAD_DYLIB, etc. load commands in the order they appear in the
+ * headers.   The library ordinals start from 1.
  * For a dynamic library that is built as a two-level namespace image the
  * undefined references from module defined in another use the same nlist struct
  * an in that case SELF_LIBRARY_ORDINAL is used as the library ordinal.  For
@@ -286,15 +288,29 @@ struct nlist_64 {
  */
 #define N_ARM_THUMB_DEF	0x0008 /* symbol is a Thumb function (ARM) */
 
+/*
+ * The N_SYMBOL_RESOLVER bit of the n_desc field indicates that the
+ * that the function is actually a resolver function and should
+ * be called to get the address of the real function to use.
+ * This bit is only available in .o files (MH_OBJECT filetype)
+ */
+#define N_SYMBOL_RESOLVER  0x0100 
+
+/*
+ * The N_ALT_ENTRY bit of the n_desc field indicates that the
+ * symbol is pinned to the previous content.
+ */
+#define N_ALT_ENTRY 0x0200
+
 #ifndef __STRICT_BSD__
-#if __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 /*
  * The function nlist(3) from the C library.
  */
 extern int nlist (const char *filename, struct nlist *list);
-#if __cplusplus
+#ifdef __cplusplus
 }
 #endif /* __cplusplus */
 #endif /* __STRICT_BSD__ */

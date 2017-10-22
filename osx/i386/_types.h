@@ -69,11 +69,11 @@ typedef unsigned int		__darwin_natural_t;
 
 typedef int			__darwin_ct_rune_t;	/* ct_rune_t */
 
-#if 0
 /*
  * mbstate_t is an opaque object to keep conversion state, during multibyte
  * stream conversions.  The content must not be referenced by user programs.
  */
+#if 0 // NOT NEEDED BY CLASSGRAPH
 typedef union {
 	char		__mbstate8[128];
 	long long	_mbstateL;			/* for alignment */
@@ -82,13 +82,15 @@ typedef union {
 
 typedef __mbstate_t		__darwin_mbstate_t;	/* mbstate_t */
 
-#if defined(__GNUC__) && defined(__PTRDIFF_TYPE__)
+#if defined(__PTRDIFF_TYPE__)
 typedef __PTRDIFF_TYPE__	__darwin_ptrdiff_t;	/* ptr1 - ptr2 */
+#elif defined(__LP64__)
+typedef long			__darwin_ptrdiff_t;	/* ptr1 - ptr2 */
 #else
 typedef int			__darwin_ptrdiff_t;	/* ptr1 - ptr2 */
 #endif /* __GNUC__ */
 
-#if defined(__GNUC__) && defined(__SIZE_TYPE__)
+#if defined(__SIZE_TYPE__)
 typedef __SIZE_TYPE__		__darwin_size_t;	/* sizeof() */
 #else
 typedef unsigned long		__darwin_size_t;	/* sizeof() */
@@ -100,7 +102,7 @@ typedef __builtin_va_list	__darwin_va_list;	/* va_list */
 typedef void *			__darwin_va_list;	/* va_list */
 #endif
 
-#if defined(__GNUC__) && defined(__WCHAR_TYPE__)
+#if defined(__WCHAR_TYPE__)
 typedef __WCHAR_TYPE__		__darwin_wchar_t;	/* wchar_t */
 #else
 typedef __darwin_ct_rune_t	__darwin_wchar_t;	/* wchar_t */
@@ -108,7 +110,7 @@ typedef __darwin_ct_rune_t	__darwin_wchar_t;	/* wchar_t */
 
 typedef __darwin_wchar_t	__darwin_rune_t;	/* rune_t */
 
-#if defined(__GNUC__) && defined(__WINT_TYPE__)
+#if defined(__WINT_TYPE__)
 typedef __WINT_TYPE__		__darwin_wint_t;	/* wint_t */
 #else
 typedef __darwin_ct_rune_t	__darwin_wint_t;	/* wint_t */

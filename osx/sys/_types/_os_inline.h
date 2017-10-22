@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000-2007 Apple Inc. All rights reserved.
+ * Copyright (c) 2003-2012 Apple Inc. All rights reserved.
  *
  * @APPLE_OSREFERENCE_LICENSE_HEADER_START@
  * 
@@ -25,14 +25,10 @@
  * 
  * @APPLE_OSREFERENCE_LICENSE_HEADER_END@
  */
-
-#ifndef _MACH_MACHINE_VM_TYPES_H_
-#define _MACH_MACHINE_VM_TYPES_H_
-
-#if defined (__i386__) || defined(__x86_64__)
-#include "mach/i386/vm_types.h"
-#else
-#error architecture not supported
-#endif
-
-#endif /* _MACH_MACHINE_VM_TYPES_H_ */
+#if !defined(OS_INLINE)
+# if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#        define OS_INLINE static inline
+# else
+#        define OS_INLINE static __inline__
+# endif
+#endif /* OS_INLINE */
