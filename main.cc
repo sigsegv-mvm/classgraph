@@ -154,7 +154,11 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 			}
 			
 			printf("%s %u: ", indent, i);
-			printf("+%06x %s\n", offset, str_flags);
+			if (offset >= 0) {
+				printf("+%06x %s\n", offset, str_flags);
+			} else {
+				printf("-%06x %s\n", -offset, str_flags);
+			}
 			
 			symbol_t sym_base;
 			
