@@ -61,6 +61,15 @@
 #include <mach-o/reloc.h>
 #include <mach-o/fat.h>
 
+/* otool */
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "otool/dyld_bind_info.h"
+#ifdef __cplusplus
+}
+#endif
+
 /* sourcemod */
 //#include "sourcemod/asm.h"
 
