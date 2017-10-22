@@ -255,32 +255,6 @@ void symtab_macho_foreach(library_info_t *lib, void (*callback)(const symbol_t *
 }
 
 
-bool symtab_macho_lookup_addr(library_info_t *lib, symbol_t *entry, uintptr_t addr)
-{
-	uintptr_t sym_off = (uintptr_t)lib->map + lib->macho_symtab_off;
-	for (int i = 0; i < lib->macho_symtab_count; ++i) {
-		struct nlist *sym = (struct nlist *)sym_off + i;
-		
-		if ((sym->n_type & N_EXT) != 0 || (sym->n_type & N_STAB) != 0) {
-			/* skip external and debug entries */
-			continue;
-		}
-		
-		if (addr == macho_get_sym_addr(lib, sym)) {
-			entry->lib            = lib;
-			entry->addr           = addr;
-			entry->size           = 0;
-			entry->name           = macho_get_sym_name(lib, sym);
-			entry->name_demangled = try_demangle_noprefix(entry->name);
-			
-			return true;
-		}
-	}
-	
-	return false;
-}
-
-
 /* given a particular address, find out if there is a relocation entry for that
  * address, and if so, return some information about the symbol being relocated
  * to the address */

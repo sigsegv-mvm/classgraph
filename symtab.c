@@ -28,19 +28,6 @@ void symtab_foreach(void (*callback)(const symbol_t *))
 }
 
 
-bool symtab_lookup_addr(library_info_t *lib, symbol_t *entry, uintptr_t addr)
-{
-	if (lib->is_elf) {
-		return symtab_elf_lookup_addr(lib, entry, addr);
-	}
-	if (lib->is_macho) {
-		return symtab_macho_lookup_addr(lib, entry, addr);
-	}
-	
-	return false;
-}
-
-
 bool symtab_addr_abs(symbol_t *entry, uintptr_t addr)
 {
 	library_info_t *lib = lib_first();

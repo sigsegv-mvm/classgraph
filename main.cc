@@ -14,15 +14,24 @@ static uintptr_t vtable_for__si_class_type_info;
 static uintptr_t vtable_for__vmi_class_type_info;
 
 
-bool sym_compare(const symbol_t& lhs, const symbol_t& rhs)
-{
-	int cmp = strcmp(lhs.name_demangled, rhs.name_demangled);
-	return (cmp < 0);
-}
-
-
-std::set<symbol_t, bool (*)(const symbol_t&, const symbol_t&)> syms(&sym_compare);
+std::set<symbol_t, bool (*)(const symbol_t&, const symbol_t&)> syms([](const symbol_t& lhs, const symbol_t& rhs){ return (strcmp(lhs.name_demangled, rhs.name_demangled) < 0); });
 std::map<uintptr_t, symbol_t> symcache;
+
+
+extern "C" bool symtab_lookup_addr(library_info_t *lib, symbol_t *entry, uintptr_t addr)
+{
+	for (const auto& pair : symcache) {
+		const uintptr_t& addr_i = pair.first;
+		const symbol_t& sym_i   = pair.second;
+		
+		if (addr == addr_i && lib == sym_i.lib) {
+			*entry = sym_i;
+			return true;
+		}
+	}
+	
+	return false;
+}
 
 
 void get_type_info_addrs(void)
@@ -154,17 +163,6 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 }
 
 
-void sym_iterator(const symbol_t *sym)
-{
-	if (strncmp(sym->name, "_ZTI", 4) != 0 ||
-		!r_match(sym->name_demangled)) {
-		return;
-	}
-	
-	syms.insert(*sym);
-}
-
-
 int main(int argc, char **argv)
 {
 	pr_info("classgraph\n\n");
@@ -178,8 +176,12 @@ int main(int argc, char **argv)
 	
 	get_type_info_addrs();
 	
+	symtab_foreach([](const symbol_t *sym){
+		if (strncmp(sym->name, "_ZTI", 4) != 0 || !r_match(sym->name_demangled)) return;
+		syms.insert(*sym);
+		symcache[sym->addr] = *sym;
+	});
 	
-	symtab_foreach(&sym_iterator);
 	for (const symbol_t& sym : syms) {
 		recurse_typeinfo(0, &sym);
 	}

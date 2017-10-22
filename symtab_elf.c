@@ -79,33 +79,3 @@ void symtab_elf_foreach(library_info_t *lib, void (*callback)(const symbol_t *))
 		callback(&entry);
 	}
 }
-
-
-bool symtab_elf_lookup_addr(library_info_t *lib, symbol_t *entry, uintptr_t addr)
-{
-	for (int i = 0; i < lib->elf_symtab_count; ++i) {
-		GElf_Sym sym;
-		gelf_getsym(lib->elf_symtab_data, i, &sym);
-		
-		//if (ELF32_ST_TYPE(sym.st_info) != type) {
-		//	continue;
-		//}
-		
-		if (sym.st_value == addr) {
-			entry->lib            = lib;
-			entry->addr           = sym.st_value;
-			entry->size           = sym.st_size;
-			entry->name           = elf_strptr(lib->elf, lib->elf_symtab_shdr.sh_link, sym.st_name);
-			entry->name_demangled = try_demangle_noprefix(entry->name);
-			
-			return true;
-		}
-		
-		/*fprintf(stderr,
-			"val %08x size %8x bind %2d type %2d name '%s'\n",
-			val, size, bind, type,
-			elf_strptr(lib->elf, shdr.sh_link, sym.st_name));*/
-	}
-	
-	return false;
-}

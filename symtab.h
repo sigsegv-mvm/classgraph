@@ -6,6 +6,9 @@ void symtab_init(library_info_t *lib);
 
 void symtab_foreach(void (*callback)(const symbol_t *));
 
+#ifdef __cplusplus
+extern "C"
+#endif
 bool symtab_lookup_addr(library_info_t *lib, symbol_t *entry, uintptr_t addr);
 
 bool symtab_addr_abs(symbol_t *entry, uintptr_t addr);
