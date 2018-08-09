@@ -73,15 +73,8 @@ void lib_init(const char *path)
 		lib->path = fixed_path;*/
 	}
 	
-	lib->is_elf   = (strstr(name, ".so") != NULL);
-	lib->is_macho = (strstr(name, ".dylib") != NULL);
-	
-	if (lib->is_elf) {
-		if ((lib->handle = dlopen(lib->path, RTLD_LAZY | RTLD_GLOBAL)) == NULL) {
-			warnx("dlopen('%s') failed: %s", name, dlerror());
-			return;
-		}
-	}
+//	lib->is_elf   = (strstr(name, ".so") != NULL);
+//	lib->is_macho = (strstr(name, ".dylib") != NULL);
 	
 	if (fstat(lib->fd, &lib->stat) != 0) {
 		warn("fstat('%s') failed", name);
@@ -97,11 +90,43 @@ void lib_init(const char *path)
 		return;
 	}
 	
+	if (lib->size >= EI_NIDENT) {
+		const char *e_ident = lib->map;
+		if (e_ident[EI_MAG0] == ELFMAG0 && e_ident[EI_MAG1] == ELFMAG1 && e_ident[EI_MAG2] == ELFMAG2 && e_ident[EI_MAG3] == ELFMAG3) {
+			assert(e_ident[EI_CLASS]   == ELFCLASS32);
+			assert(e_ident[EI_DATA]    == ELFDATA2LSB);
+			assert(e_ident[EI_VERSION] == EV_CURRENT);
+			
+			pr_debug("lib_init: detected ELF32\n");
+			lib->is_elf = true;
+		}
+	}
+	
+	if (lib->size >= sizeof(uint32_t)) {
+		const uint32_t *magic = lib->map;
+		if (*magic == MH_MAGIC) {
+			pr_debug("lib_init: detected Mach-O (non-fat)\n");
+			lib->is_macho = true;
+		} else if (*magic == FAT_CIGAM) {
+			pr_debug("lib_init: detected Mach-O (fat)\n");
+			lib->is_macho = true;
+		}
+	}
+	
+	assert(lib->is_elf || lib->is_macho);
+	assert(!(lib->is_elf && lib->is_macho));
+	
 	if (lib->is_elf) {
+		if ((lib->handle = dlopen(lib->path, RTLD_LAZY | RTLD_GLOBAL)) == NULL) {
+			warnx("dlopen('%s') failed: %s", name, dlerror());
+			return;
+		}
+		
 		if (dlinfo(lib->handle, RTLD_DI_LINKMAP, &lib->linkmap) != 0) {
 			warnx("dlinfo('%s', RTLD_DI_LINKMAP) failed: %s", name, dlerror());
 			return;
 		}
+		
 		lib->baseaddr = lib->linkmap->l_addr;
 	} else {
 		lib->baseaddr = 0;
