@@ -44,6 +44,12 @@ static uintptr_t macho_get_sym_addr(library_info_t *lib, struct nlist *sym)
 }
 
 
+static const char *macho_get_lc_str(struct load_command *cmd, union lc_str str)
+{
+	assert(str.offset + 1 < cmd->cmdsize);
+	return (const char *)cmd + str.offset;
+}
+
 void symtab_macho_init(library_info_t *lib)
 {
 	lib->macho_hdr = lib->map;
@@ -166,7 +172,9 @@ void symtab_macho_init(library_info_t *lib)
 		//pr_debug("  cmd:       %08x %s\n", cmd->cmd, cmd_name);
 		//pr_debug("  cmdsize:   %08x\n", cmd->cmdsize);
 		
-		if (cmd->cmd == LC_SEGMENT) {
+		switch (cmd->cmd & ~LC_REQ_DYLD) {
+		case LC_SEGMENT:
+		{
 			struct segment_command *seg_cmd = (struct segment_command *)cmd;
 			
 			//pr_debug("  segname:   '%s'\n", seg_cmd->segname);
@@ -206,7 +214,11 @@ void symtab_macho_init(library_info_t *lib)
 			
 			assert(nsegs < 16);
 			segs[nsegs++] = seg_cmd;
-		} else if (cmd->cmd == LC_SYMTAB) {
+			
+			break;
+		}
+		case LC_SYMTAB:
+		{
 			struct symtab_command *symtab_cmd = (struct symtab_command *)cmd;
 			
 			//pr_debug("  symoff:    %08x\n", symtab_cmd->symoff);
@@ -218,7 +230,41 @@ void symtab_macho_init(library_info_t *lib)
 			lib->macho_symtab_count = symtab_cmd->nsyms;
 			lib->macho_strtab_off   = symtab_cmd->stroff;
 			lib->macho_strtab_size  = symtab_cmd->strsize;
-		} else if (cmd->cmd == LC_DYSYMTAB) {
+			
+			break;
+		}
+		case LC_SYMSEG: break; // TODO
+		case LC_THREAD:
+		case LC_UNIXTHREAD:
+		{
+			uint32_t *ptr = (uint32_t *)(cmd_addr + sizeof(struct thread_command));
+			
+			//while ((uintptr_t)ptr + 8 <= cmd_addr + cmd->cmdsize) {
+			//	uint32_t flavor = *(ptr++);
+			//	pr_debug("  flavor:    %08x\n", flavor);
+			//	
+			//	uint32_t count = *(ptr++);
+			//	pr_debug("  state:     ");
+			//	if (count != 0) {
+			//		bool first = true;
+			//		while (count-- != 0 && (uintptr_t)ptr + 4 <= cmd_addr + cmd->cmdsize) {
+			//			pr_debug("%*s%08x\n", (first ? 0 : 13), "", *(ptr++));
+			//			first = false;
+			//		}
+			//	} else {
+			//		pr_debug("<none>\n");
+			//	}
+			//}
+			
+			break;
+		}
+		case LC_LOADFVMLIB: break; // TODO
+		case LC_IDFVMLIB:   break; // TODO
+		case LC_IDENT:      break; // TODO
+		case LC_FVMFILE:    break; // TODO
+		case LC_PREPAGE:    break; // TODO
+		case LC_DYSYMTAB:
+		{
 			struct dysymtab_command *dysymtab_cmd = (struct dysymtab_command *)cmd;
 			
 			//pr_debug("  ilocalsym:      %08x\n", dysymtab_cmd->ilocalsym);
@@ -242,7 +288,81 @@ void symtab_macho_init(library_info_t *lib)
 			
 			lib->macho_ext_reloc_off   = dysymtab_cmd->extreloff;
 			lib->macho_ext_reloc_count = dysymtab_cmd->nextrel;
-		} else if (cmd->cmd == LC_DYLD_INFO || cmd->cmd == LC_DYLD_INFO_ONLY) {
+			
+			break;
+		}
+		case LC_LOAD_DYLIB:
+		case LC_ID_DYLIB:
+		case LC_LOAD_WEAK_DYLIB:
+		case LC_REEXPORT_DYLIB:
+		{
+			struct dylib_command *dylib_cmd = (struct dylib_command *)cmd;
+			
+			//pr_debug("  dylib.name:                  \"%s\"\n", macho_get_lc_str(cmd, dylib_cmd->dylib.name));
+			//pr_debug("  dylib.timestamp:             %08x\n",   dylib_cmd->dylib.timestamp);
+			//pr_debug("  dylib.current_version:       %08x\n",   dylib_cmd->dylib.current_version);
+			//pr_debug("  dylib.compatibility_version: %08x\n",   dylib_cmd->dylib.compatibility_version);
+			
+			break;
+		}
+		case LC_LOAD_DYLINKER:
+		case LC_ID_DYLINKER:
+		case LC_DYLD_ENVIRONMENT:
+		{
+			struct dylinker_command *dylinker_cmd = (struct dylinker_command *)cmd;
+			
+			//pr_debug("  name:      \"%s\"\n", macho_get_lc_str(cmd, dylinker_cmd->name));
+			
+			break;
+		}
+		case LC_PREBOUND_DYLIB:
+		{
+			struct prebound_dylib_command *prebounddylib_cmd = (struct prebound_dylib_command *)cmd;
+			
+			//pr_debug("  name:               \"%s\"\n", macho_get_lc_str(cmd, prebounddylib_cmd->name));
+			//pr_debug("  nmodules:           %08x\n", prebounddylib_cmd->nmodules);
+			
+			//uint8_t *linked_modules = (uint8_t *)macho_get_lc_str(cmd, prebounddylib_cmd->linked_modules);
+			//for (uint32_t j = 0; j < prebounddylib_cmd->nmodules; ++j) {
+			//	uint8_t is_bound = ((linked_modules[j / 8] >> (j % 8)) & 0x01);
+			//	pr_debug("  linked_modules[%02x]: %s\n", j, (is_bound ? "BOUND" : "not bound"));
+			//}
+			
+			break;
+		}
+		case LC_ROUTINES:      break; // TODO
+		case LC_SUB_FRAMEWORK: break; // TODO
+		case LC_SUB_UMBRELLA:  break; // TODO
+		case LC_SUB_CLIENT:    break; // TODO
+		case LC_SUB_LIBRARY:   break; // TODO
+		case LC_TWOLEVEL_HINTS:
+		{
+			struct twolevel_hints_command *twolevelhints_cmd = (struct twolevel_hints_command *)cmd;
+			
+			//pr_debug("  offset:    %08x\n", twolevelhints_cmd->offset);
+			//pr_debug("  nhints:    %08x\n", twolevelhints_cmd->nhints);
+			
+			break;
+		}
+		case LC_PREBIND_CKSUM:
+		{
+			struct prebind_cksum_command *prebindcksum_cmd = (struct prebind_cksum_command *)cmd;
+			
+			//pr_debug("  cksum:     %08x\n", prebindcksum_cmd->cksum);
+			
+			break;
+		}
+		case LC_SEGMENT_64:         break; // TODO
+		case LC_ROUTINES_64:        break; // TODO
+		case LC_UUID:               break; // TODO
+		case LC_RPATH:              break; // TODO
+		case LC_CODE_SIGNATURE:     break; // TODO
+		case LC_SEGMENT_SPLIT_INFO: break; // TODO
+		case LC_LAZY_LOAD_DYLIB:    break; // TODO
+		case LC_ENCRYPTION_INFO:    break; // TODO
+		case LC_DYLD_INFO:
+		case LC_DYLD_INFO_ONLY:
+		{
 			struct dyld_info_command *dyldinfo_cmd = (struct dyld_info_command *)cmd;
 			
 			//pr_debug("  rebase_off:     %08x\n", dyldinfo_cmd->rebase_off);
@@ -267,6 +387,22 @@ void symtab_macho_init(library_info_t *lib)
 			lib->macho_lazy_bind_size = dyldinfo_cmd->lazy_bind_size;
 			lib->macho_export_off     = dyldinfo_cmd->export_off;
 			lib->macho_export_size    = dyldinfo_cmd->export_size;
+			
+			break;
+		}
+		case LC_LOAD_UPWARD_DYLIB:        break; // TODO
+		case LC_VERSION_MIN_MACOSX:       break; // TODO
+		case LC_VERSION_MIN_IPHONEOS:     break; // TODO
+		case LC_FUNCTION_STARTS:          break; // TODO
+		case LC_MAIN:                     break; // TODO
+		case LC_DATA_IN_CODE:             break; // TODO
+		case LC_SOURCE_VERSION:           break; // TODO
+		case LC_DYLIB_CODE_SIGN_DRS:      break; // TODO
+		case LC_ENCRYPTION_INFO_64:       break; // TODO
+		case LC_LINKER_OPTION:            break; // TODO
+		case LC_LINKER_OPTIMIZATION_HINT: break; // TODO
+		case LC_VERSION_MIN_TVOS:         break; // TODO
+		case LC_VERSION_MIN_WATCHOS:      break; // TODO
 		}
 		
 		cmd_addr += cmd->cmdsize;
