@@ -1,6 +1,6 @@
 // CLASSGRAPH TWEAKS BEGIN
 #define __LITTLE_ENDIAN__
-#include <memory.h>
+#include <stdlib.h>
 void *allocate(size_t size) { return malloc(size); }
 #include <stdbool.h>
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
