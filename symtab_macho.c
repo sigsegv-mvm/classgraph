@@ -3,6 +3,7 @@
 
 static struct nlist *macho_get_sym_by_index(library_info_t *lib, int index)
 {
+	assert(index < lib->macho_symtab_count);
 	uintptr_t sym_off = (uintptr_t)lib->map + lib->macho_symtab_off;
 	return (struct nlist *)sym_off + index;
 }
@@ -167,8 +168,6 @@ void symtab_macho_init(library_info_t *lib)
 		if (cmd->cmd == LC_SEGMENT) {
 			struct segment_command *seg_cmd = (struct segment_command *)cmd;
 			
-			segs[nsegs++] = seg_cmd;
-			
 			//pr_debug("  segname:   '%s'\n", seg_cmd->segname);
 			//pr_debug("  vmaddr:    %08x\n", seg_cmd->vmaddr);
 			//pr_debug("  vmsize:    %08x\n", seg_cmd->vmsize);
@@ -178,6 +177,8 @@ void symtab_macho_init(library_info_t *lib)
 			//pr_debug("  initprot:  %08x\n", seg_cmd->initprot);
 			//pr_debug("  nsects:    %08x\n", seg_cmd->nsects);
 			//pr_debug("  flags:     %08x\n", seg_cmd->flags);
+			
+			assert(seg_cmd->fileoff + seg_cmd->filesize <= lib->size);
 			
 			uintptr_t sect_addr = cmd_addr + sizeof(struct segment_command);
 			for (int j = 0; j < seg_cmd->nsects; ++j) {
@@ -201,6 +202,9 @@ void symtab_macho_init(library_info_t *lib)
 				
 				sect_addr += sizeof(struct section);
 			}
+			
+			assert(nsegs < 16);
+			segs[nsegs++] = seg_cmd;
 		} else if (cmd->cmd == LC_SYMTAB) {
 			struct symtab_command *symtab_cmd = (struct symtab_command *)cmd;
 			
@@ -277,15 +281,40 @@ void symtab_macho_init(library_info_t *lib)
 }
 
 
+static const char *macho_sym_type_string(uint8_t n_type)
+{
+	switch ((n_type & N_TYPE)) {
+	case N_UNDF: return "N_UNDF";
+	case N_ABS:  return "N_ABS";
+	case 0x4:    return "0x4";
+	case 0x6:    return "0x6";
+	case 0x8:    return "0x8";
+	case N_INDR: return "N_INDR";
+	case N_PBUD: return "N_PBUD";
+	case N_SECT: return "N_SECT";
+	default:     return "???";
+	}
+}
+
 void symtab_macho_foreach(library_info_t *lib, void (*callback)(const symbol_t *))
 {
 	uintptr_t sym_off = (uintptr_t)lib->map + lib->macho_symtab_off;
 	for (int i = 0; i < lib->macho_symtab_count; ++i) {
 		struct nlist *sym = (struct nlist *)sym_off + i;
 		
+		/* sym->n_type sub-fields */
+		uint8_t n_stab = (sym->n_type & N_STAB);
+		uint8_t n_pext = (sym->n_type & N_PEXT);
+		uint8_t n_type = (sym->n_type & N_TYPE);
+		uint8_t n_ext  = (sym->n_type & N_EXT);
+		
 		//pr_debug("SYMBOL %d\n", i);
 		//pr_debug("  n_strx:  %08x\n", sym->n_un.n_strx);
-		//pr_debug("  n_type:  %02x\n", sym->n_type);
+		//pr_debug("  n_type:  %02x [stab:%c] [ext:%c] [pext:%c] [type:%s]\n", sym->n_type,
+		//	(n_stab != 0 ? 'Y' : 'N'),
+		//	(n_ext  != 0 ? 'Y' : 'N'),
+		//	(n_pext != 0 ? 'Y' : 'N'),
+		//	macho_sym_type_string(n_type));
 		//pr_debug("  n_sect:  %02x\n", sym->n_sect);
 		//pr_debug("  n_desc:  %04x\n", sym->n_desc);
 		//pr_debug("  n_value: %08x\n", sym->n_value);
@@ -299,10 +328,12 @@ void symtab_macho_foreach(library_info_t *lib, void (*callback)(const symbol_t *
 		//	pr_debug("  type %02x\n", sym->n_type);
 		//}
 		
-		if ((sym->n_type & N_EXT) != 0 || (sym->n_type & N_STAB) != 0) {
-			/* skip external and debug entries */
-			continue;
-		}
+		/* skip external and debug entries */
+		if (n_ext != 0 || n_stab != 0) continue;
+		
+		/* we don't have handling for indirect symbols set up yet;
+		 * see osx/mach-o/nlist.h */
+		assert(n_type != N_INDR);
 		
 		symbol_t entry = {
 			.lib            = lib,
@@ -337,14 +368,17 @@ bool symtab_macho_find_reloc_sym_for_addr(library_info_t *lib, symbol_t *entry, 
 	for (int i = 0; i < lib->macho_ext_reloc_count; ++i) {
 		struct relocation_info *reloc = (struct relocation_info *)((uintptr_t)lib->map + lib->macho_ext_reloc_off) + i;
 		
-		//pr_debug("r_address:   %08x\n", reloc->r_address);
-		//pr_debug("r_symbolnum: %06x\n", reloc->r_symbolnum);
-		//pr_debug("r_pcrel:     %01x\n", reloc->r_pcrel);
-		//pr_debug("r_length:    %01x\n", reloc->r_length);
-		//pr_debug("r_extern:    %01x\n", reloc->r_extern);
-		//pr_debug("r_type:      %01x\n", reloc->r_type);
-		
-		if (reloc->r_address == addr) {
+		/* if r_extern == 0, then r_symbolnum is NOT a symbol index, but rather a section ordinal
+		 * if r_type != R_ABS, then it's some kind of weird relocation we don't know how to deal with
+		 * if r_length != 2, then the relocation isn't for a 32-bit value ( 0 => 8-bit, 1 => 16-bit, 2 => 32-bit, 3 => 64-bit ) */
+		if (reloc->r_address == addr && reloc->r_extern == 1 && reloc->r_type == R_ABS && reloc->r_length == 2) {
+			//pr_debug("r_address:   %08x\n", reloc->r_address);
+			//pr_debug("r_symbolnum: %06x\n", reloc->r_symbolnum);
+			//pr_debug("r_pcrel:     %01x\n", reloc->r_pcrel);
+			//pr_debug("r_length:    %01x\n", reloc->r_length);
+			//pr_debug("r_extern:    %01x\n", reloc->r_extern);
+			//pr_debug("r_type:      %01x\n", reloc->r_type);
+			
 			struct nlist *sym = macho_get_sym_by_index(lib, reloc->r_symbolnum);
 			
 			entry->lib            = lib;
