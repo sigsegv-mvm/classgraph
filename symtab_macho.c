@@ -92,7 +92,8 @@ void symtab_macho_init(library_info_t *lib)
 	assert(lib->macho_hdr->magic      == MH_MAGIC);
 	assert(lib->macho_hdr->cputype    == CPU_TYPE_I386);
 	assert(lib->macho_hdr->cpusubtype == CPU_SUBTYPE_I386_ALL);
-	assert(lib->macho_hdr->filetype   == MH_DYLIB);
+	
+	assert(lib->macho_hdr->filetype == MH_DYLIB || lib->macho_hdr->filetype == MH_EXECUTE);
 	
 	//pr_debug("ncmds:      %08x\n", lib->macho_hdr->ncmds);
 	//pr_debug("sizeofcmds: %08x\n", lib->macho_hdr->sizeofcmds);
