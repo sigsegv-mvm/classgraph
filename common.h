@@ -51,18 +51,6 @@ typedef struct {
 	uint32_t               macho_export_size;     // LC_DYLD_INFO
 	uint64_t               macho_ndbi;
 	struct dyld_bind_info *macho_dbi;
-	
-	/* section info */
-	uintptr_t text_off;
-	size_t    text_size;
-	uintptr_t data_off;
-	size_t    data_size;
-	uintptr_t rodata_off;
-	size_t    rodata_size;
-	uintptr_t datarelro_off;
-	size_t    datarelro_size;
-	uintptr_t bss_off;
-	size_t    bss_size;
 } library_info_t;
 
 

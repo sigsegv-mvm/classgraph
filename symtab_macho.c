@@ -199,17 +199,6 @@ void symtab_macho_init(library_info_t *lib)
 				assert(lib->macho_sect_count <= 255);
 				lib->macho_sects[lib->macho_sect_count++] = sect;
 				
-				if (strcmp(sect->segname, "__DATA") == 0) {
-					if (strcmp(sect->sectname, "__data") == 0) {
-						lib->data_off  = sect->offset;
-						lib->data_size = sect->size;
-					} else if (strcmp(sect->sectname, "__const") == 0) {
-						lib->rodata_off  = sect->offset;
-						lib->rodata_size = sect->size;
-					}
-				}
-				// TODO: text, datarelro, bss
-				
 				sect_addr += sizeof(struct section);
 			}
 		} else if (cmd->cmd == LC_SYMTAB) {
