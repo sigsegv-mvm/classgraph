@@ -607,3 +607,29 @@ bool symtab_macho_find_reloc_sym_for_addr(library_info_t *lib, symbol_t *entry, 
 	
 	return false;
 }
+
+
+/* convert a VM address to a pointer into the mapped file */
+void *symtab_macho_get_ptr(library_info_t *lib, uintptr_t addr, size_t size)
+{
+	macho_vmrange_t *vmrange = NULL;
+	
+	for (int i = 0; i < lib->macho_vmrange_count; ++i) {
+		if (addr >= lib->macho_vmranges[i].vm_addr_begin && addr < lib->macho_vmranges[i].vm_addr_end) {
+			vmrange = lib->macho_vmranges + i;
+			break;
+		}
+	}
+	
+	/* couldn't find a VM address range containing addr */
+	assert(vmrange != NULL);
+	
+	/* found a VM address range containing addr, but it's a non-file-mapped range */
+	assert(vmrange->is_mapped);
+	
+	/* ensure that the entire size fits within the VM address range */
+	assert((addr + size) <= vmrange->vm_addr_end);
+	
+	uintptr_t map_off = vmrange->map_off_begin + (addr - vmrange->vm_addr_begin);
+	return (void *)((uintptr_t)lib->map + map_off);
+}

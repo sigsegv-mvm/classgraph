@@ -91,7 +91,7 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 		}
 	}
 	if (sym->lib->is_macho) {
-		rtti = (const __class_type_info *)((uintptr_t)sym->lib->map + sym->addr);
+		rtti = (const __class_type_info *)symtab_macho_get_ptr(sym->lib, sym->addr, sizeof(__class_type_info));
 		
 		symbol_t rsym;
 		if (symtab_macho_find_reloc_sym_for_addr(sym->lib, &rsym, sym->addr)) {

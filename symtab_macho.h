@@ -8,5 +8,7 @@ void symtab_macho_foreach(library_info_t *lib, void (*callback)(const symbol_t *
 
 bool symtab_macho_find_reloc_sym_for_addr(library_info_t *lib, symbol_t *entry, uintptr_t addr);
 
+void *symtab_macho_get_ptr(library_info_t *lib, uintptr_t addr, size_t size);
+
 
 #endif
