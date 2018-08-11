@@ -3,6 +3,23 @@
 
 
 typedef struct {
+	bool is_mapped; // is it even valid to access this VM range through the file mapping?
+	
+	uint32_t vm_addr_begin;
+	uint32_t vm_addr_end;
+	
+	uint32_t map_off_begin;
+	uint32_t map_off_end;
+	
+	struct segment_command *p_segment; // ptr to original LC_SEGMENT base
+	struct section         *p_section; // ptr to original LC_SEGMENT struct section
+	
+	uint32_t segment_idx; // zero-based index of which LC_SEGMENT we are from
+	uint32_t section_idx; // zero-based index of which LC_SEGMENT section we are from
+} macho_vmrange_t;
+
+
+typedef struct {
 	const char *name;
 	const char *path;
 	
@@ -30,8 +47,6 @@ typedef struct {
 	
 	/* mach-o symtab stuff */
 	struct mach_header    *macho_hdr;
-	int                    macho_sect_count;      // LC_SEGMENT
-	struct section        *macho_sects[256];      // LC_SEGMENT
 	uint32_t               macho_symtab_off;      // LC_SYMTAB
 	uint32_t               macho_symtab_count;    // LC_SYMTAB
 	uint32_t               macho_strtab_off;      // LC_SYMTAB
@@ -51,6 +66,10 @@ typedef struct {
 	uint32_t               macho_export_size;     // LC_DYLD_INFO
 	uint64_t               macho_ndbi;
 	struct dyld_bind_info *macho_dbi;
+	
+	/* mach-o VM address range information */
+	int             macho_vmrange_count;
+	macho_vmrange_t macho_vmranges[256];
 } library_info_t;
 
 

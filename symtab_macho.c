@@ -109,7 +109,7 @@ void symtab_macho_init(library_info_t *lib)
 	uint32_t nsegs = 0;
 	struct segment_command *segs[16];
 	
-	lib->macho_sect_count = 0;
+	lib->macho_vmrange_count = 0;
 	
 	uintptr_t cmd_addr = (uintptr_t)lib->map + sizeof(struct mach_header);
 	for (int i = 0; i < lib->macho_hdr->ncmds; ++i) {
@@ -206,8 +206,38 @@ void symtab_macho_init(library_info_t *lib)
 				//pr_debug("    reserved1: %08x\n", sect->reserved1);
 				//pr_debug("    reserved2: %08x\n", sect->reserved2);
 				
-				assert(lib->macho_sect_count <= 255);
-				lib->macho_sects[lib->macho_sect_count++] = sect;
+				assert(lib->macho_vmrange_count < 256);
+				macho_vmrange_t *vmrange = lib->macho_vmranges + lib->macho_vmrange_count++;
+				
+				vmrange->is_mapped = (seg_cmd->filesize != 0 && ((sect->flags & SECTION_TYPE) != S_ZEROFILL));
+				
+				assert(sect->addr              >= seg_cmd->vmaddr);
+				assert(sect->addr              <= seg_cmd->vmaddr + seg_cmd->vmsize);
+				assert(sect->addr + sect->size <= seg_cmd->vmaddr + seg_cmd->vmsize);
+				vmrange->vm_addr_begin = sect->addr;
+				vmrange->vm_addr_end   = sect->addr + sect->size;
+				
+				assert(!vmrange->is_mapped || sect->offset              >= seg_cmd->fileoff);
+				assert(!vmrange->is_mapped || sect->offset              <= seg_cmd->fileoff + seg_cmd->filesize);
+				assert(!vmrange->is_mapped || sect->offset + sect->size <= seg_cmd->fileoff + seg_cmd->filesize);
+				vmrange->map_off_begin = sect->offset;
+				vmrange->map_off_end   = sect->offset + sect->size;
+				
+				vmrange->p_segment = seg_cmd;
+				vmrange->p_section = sect;
+				
+				vmrange->segment_idx = nsegs;
+				vmrange->section_idx = j;
+				
+				/* verify that no other vmranges overlap with this one */
+				uint32_t vmrange1_lo = vmrange->vm_addr_begin;
+				uint32_t vmrange1_hi = vmrange->vm_addr_end;
+				for (int k = 0; k < lib->macho_vmrange_count - 1; ++k) {
+					uint32_t vmrange2_lo = lib->macho_vmranges[k].vm_addr_begin;
+					uint32_t vmrange2_hi = lib->macho_vmranges[k].vm_addr_end;
+					
+					assert(vmrange1_hi <= vmrange2_lo || vmrange2_hi <= vmrange1_lo);
+				}
 				
 				sect_addr += sizeof(struct section);
 			}
@@ -415,6 +445,36 @@ void symtab_macho_init(library_info_t *lib)
 		
 	//	print_dyld_bind_info(lib->macho_dbi, lib->macho_ndbi);
 	}
+	
+	/* debugging: print VM range information */
+	//pr_debug("%-32s  %17s %-8s  %17s %-8s\n", "NAME", "VM_ADDR", "VM_SIZE", "MAP_OFF", "MAP_SIZE");
+	//struct segment_command *last_seg = NULL;
+	//for (int i = 0; i < lib->macho_vmrange_count; ++i) {
+	//	macho_vmrange_t *vmrange = lib->macho_vmranges + i;
+	//	
+	//	struct segment_command *seg = vmrange->p_segment;
+	//	if (seg != last_seg) {
+	//		pr_debug("\n%-32s  %08x-%08x %08x  %08x-%08x %08x\n",
+	//			seg->segname,
+	//			seg->vmaddr,
+	//			(seg->vmaddr + seg->vmsize) - 1,
+	//			seg->vmsize,
+	//			seg->fileoff,
+	//			(seg->fileoff + seg->filesize) - 1,
+	//			seg->filesize);
+	//		
+	//		last_seg = seg;
+	//	}
+	//	
+	//	pr_debug("  %-30s  %08x-%08x %08x  %08x-%08x %08x\n",
+	//		vmrange->p_section->sectname,
+	//		vmrange->vm_addr_begin,
+	//		vmrange->vm_addr_end - 1,
+	//		(vmrange->vm_addr_end - vmrange->vm_addr_begin),
+	//		vmrange->map_off_begin,
+	//		vmrange->map_off_end - 1,
+	//		(vmrange->map_off_end - vmrange->map_off_begin));
+	//}
 }
 
 
