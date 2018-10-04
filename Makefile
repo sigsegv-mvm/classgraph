@@ -1,6 +1,18 @@
-CFLAGS  :=-m32 -I. -Iosx -std=gnu11 -O2 -g -Wall -fdiagnostics-color=always -Wno-unused-variable -Wno-unused-function -march=native -mtune=native -pthread -fno-strict-aliasing
-CXXFLAGS:=-m32 -I. -Iosx -std=gnu++14 -O2 -g -Wall -fdiagnostics-color=always -Wno-unused-variable -Wno-unused-function -march=native -mtune=native -pthread -fno-strict-aliasing
-LDFLAGS :=-Wl,-rpath=. -lm -ldl -lbsd -lelf -Wl,-E libiberty.a
+#default: optimizations enabled
+OPT?=1
+
+CFLAGS_BASE:=-m32 -march=native -mtune=native -fno-strict-aliasing -pthread -g3 -gdwarf-4 -fvar-tracking-assignments -Wall -Wno-unused-variable -Wno-unused-function -fdiagnostics-color=always -I. -Iosx
+
+ifeq "$(OPT)" "0"
+	CFLAGS_BASE+=-O0 -fno-omit-frame-pointer
+else
+	CFLAGS_BASE+=-O2
+endif
+
+CFLAGS  :=$(CFLAGS_BASE) -std=c17
+CXXFLAGS:=$(CFLAGS_BASE) -std=c++17
+
+LDFLAGS:=-Wl,-rpath=. -lm -ldl -lbsd -lelf -Wl,-E libiberty.a
 
 SOURCES_C  :=$(shell find . -follow -type f -name '*.c')
 SOURCES_CXX:=$(shell find . -follow -type f -name '*.cc')
