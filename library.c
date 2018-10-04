@@ -1,12 +1,11 @@
 #include "all.h"
 
 
-#define NUM_LIBS 100
-
+#define NUM_LIBS 256
 static library_info_t libs[NUM_LIBS];
 
 
-void lib_init(const char *path)
+void lib_init(bool primary, const char *path)
 {
 	char *path_dir  = strdup(path);
 	char *path_base = strdup(path);
@@ -27,11 +26,20 @@ void lib_init(const char *path)
 	}
 	assert(lib != NULL);
 	
+	lib->is_primary = primary;
+	
 	lib->name = name;
 	lib->path = path;
 	
+	// HACK: try /usr/lib32/ prefix if relative open() fails
 	if ((lib->fd = open(lib->path, O_RDONLY)) == -1) {
-		err(1, "open('%s') failed", name);
+		char path2[4096];
+		strlcpy(path2, "/usr/lib32/", sizeof(path2));
+		strlcat(path2, path, sizeof(path2));
+		
+		if ((lib->fd = open(path2, O_RDONLY)) == -1) {
+			err(1, "open('%s') failed", name);
+		}
 	}
 	
 	if (fstat(lib->fd, &lib->stat) != 0) {
@@ -50,7 +58,7 @@ void lib_init(const char *path)
 			assert(e_ident[EI_DATA]    == ELFDATA2LSB);
 			assert(e_ident[EI_VERSION] == EV_CURRENT);
 			
-			pr_debug("lib_init: detected ELF32\n");
+			pr_debug("lib_init('%s'): detected ELF32\n", name);
 			lib->is_elf = true;
 		}
 	}
@@ -58,10 +66,10 @@ void lib_init(const char *path)
 	if (lib->size >= sizeof(uint32_t)) {
 		const uint32_t *magic = lib->map;
 		if (*magic == MH_MAGIC) {
-			pr_debug("lib_init: detected Mach-O (non-fat)\n");
+			pr_debug("lib_init('%s'): detected Mach-O (non-fat)\n", name);
 			lib->is_macho = true;
 		} else if (*magic == FAT_CIGAM) {
-			pr_debug("lib_init: detected Mach-O (fat)\n");
+			pr_debug("lib_init('%s'): detected Mach-O (fat)\n", name);
 			lib->is_macho = true;
 		}
 	}
@@ -70,9 +78,8 @@ void lib_init(const char *path)
 	assert(!(lib->is_elf && lib->is_macho));
 	
 	if (lib->is_elf) {
-		if ((lib->handle = dlopen(lib->path, RTLD_LAZY | RTLD_GLOBAL)) == NULL) {
-			warnx("dlopen('%s') failed: %s", name, dlerror());
-			return;
+		if ((lib->handle = dlopen(lib->path, RTLD_NOW | RTLD_GLOBAL)) == NULL) {
+			errx(1, "dlopen('%s') failed: %s", name, dlerror());
 		}
 		
 		if (dlinfo(lib->handle, RTLD_DI_LINKMAP, &lib->linkmap) != 0) {
@@ -80,27 +87,28 @@ void lib_init(const char *path)
 			return;
 		}
 		
-		// REMOVE ME
-		const char *s;
-		s = "_ZTI19IBaseObjectAutoList";
-		pr_debug("dlsym('%s') = %08X\n", s, (uintptr_t)dlsym(lib->handle, s));
-		s = "_ZN19IBaseObjectAutoListD0Ev";
-		pr_debug("dlsym('%s') = %08X\n", s, (uintptr_t)dlsym(lib->handle, s));
-		//exit(0);
-		
 		lib->baseaddr = lib->linkmap->l_addr;
 	} else {
 		lib->baseaddr = 0;
 	}
 	
 	symtab_init(lib);
+	#warning TODO: lib->depends and lib->depend_count for mach-o!
+	// TODO: in symtab_macho_init, find 'load_dylib' load commands: these contain the names of the needed libraries
+	// (probably should run 'em through basename() or something)
+	
+	for (int i = 0; i < lib->depend_count; ++i) {
+		if (lib_find(lib->depends[i]) == NULL) {
+			lib_init(false, lib->depends[i]);
+		}
+	}
 }
 
 
 library_info_t *lib_find(const char *name)
 {
-	for (library_info_t *lib = libs; lib != libs + NUM_LIBS; ++lib) {
-		if (lib->name != NULL && strcasecmp(name, lib->name) == 0) {
+	for (library_info_t *lib = libs; lib < libs + NUM_LIBS; ++lib) {
+		if (!lib->is_primary && lib->name != NULL && strcasecmp(name, lib->name) == 0) {
 			return lib;
 		}
 	}
@@ -110,22 +118,13 @@ library_info_t *lib_find(const char *name)
 
 library_info_t *lib_first(void)
 {
-	library_info_t *lib = libs;
-	while (lib->name == NULL) {
-		lib = lib_next(lib);
-	}
-	
-	return lib;
+	return libs;
 }
 
 library_info_t *lib_next(library_info_t *lib)
 {
-	if (++lib != libs + NUM_LIBS) {
-		if (lib->name == NULL) {
-			return lib_next(lib);
-		} else {
-			return lib;
-		}
+	if (++lib < libs + NUM_LIBS && lib->name != NULL) {
+		return lib;
 	} else {
 		return NULL;
 	}

@@ -2,7 +2,7 @@
 #define _LIBTF2MOD_LIBRARY_H
 
 
-void lib_init(const char *path);
+void lib_init(bool primary, const char *path);
 
 library_info_t *lib_find(const char *name);
 

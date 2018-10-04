@@ -20,8 +20,12 @@ typedef struct {
 
 
 typedef struct {
+	/* fundamental stuff */
+	bool is_primary;
 	const char *name;
 	const char *path;
+	bool is_elf;
+	bool is_macho;
 	
 	/* generic file stuff */
 	int         fd;
@@ -34,18 +38,18 @@ typedef struct {
 	struct link_map *linkmap;
 	uintptr_t        baseaddr;
 	
-	/* generic symtab stuff */
-	bool is_elf;
-	bool is_macho;
+	/* library dependency stuff */
+	int depend_count;
+	const char *depends[256];
 	
-	/* elf symtab stuff */
+	/* elf stuff */
 	Elf        *elf;
 	Elf32_Ehdr *elf_hdr;
-	Elf_Data   *elf_symtab_data;
 	GElf_Shdr   elf_symtab_shdr;
+	Elf_Data   *elf_symtab_data;
 	int         elf_symtab_count;
 	
-	/* mach-o symtab stuff */
+	/* mach-o stuff */
 	struct mach_header    *macho_hdr;
 	uint32_t               macho_symtab_off;      // LC_SYMTAB
 	uint32_t               macho_symtab_count;    // LC_SYMTAB

@@ -16,8 +16,7 @@ void symtab_foreach(void (*callback)(const symbol_t *))
 {
 	library_info_t *lib = lib_first();
 	
-	do
-	{
+	do {
 		if (lib->is_elf) {
 			symtab_elf_foreach(lib, callback);
 		}
@@ -32,8 +31,7 @@ bool symtab_addr_abs(symbol_t *entry, uintptr_t addr)
 {
 	library_info_t *lib = lib_first();
 	
-	do
-	{
+	do {
 		if (addr >= lib->baseaddr && symtab_lookup_addr(lib, entry, addr - lib->baseaddr)) {
 			return true;
 		}
