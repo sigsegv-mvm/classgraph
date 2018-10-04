@@ -25,6 +25,11 @@
 #include <map>
 #endif
 
+/* libboost */
+#ifdef __cplusplus
+#include <boost/algorithm/string/join.hpp>
+#endif
+
 /* posix */
 #include <unistd.h>
 #include <fcntl.h>

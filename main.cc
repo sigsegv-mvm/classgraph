@@ -130,34 +130,19 @@ void recurse_typeinfo(int level, const symbol_t *sym)
 			auto *baseinfo = rtti_vmi->__base_info + i;
 			
 			ptrdiff_t offset = baseinfo->__offset();
-			unsigned long flags = (unsigned long)baseinfo->__offset_flags & ~(ULONG_MAX << __base_class_type_info::__offset_shift);
+			unsigned long flags = (unsigned long)baseinfo->__offset_flags & ~(ULONG_MAX << abi::__base_class_type_info::__offset_shift);
 			
-			char str_flags[1024];
-			str_flags[0] = '\0';
-			if ((flags & __base_class_type_info::__virtual_mask) != 0) {
-				if (str_flags[0] != '\0') {
-					strlcat(str_flags, " ", sizeof(str_flags));
-				}
-				strlcat(str_flags, "virtual", sizeof(str_flags));
-			}
-			if ((flags & __base_class_type_info::__public_mask) != 0) {
-				if (str_flags[0] != '\0') {
-					strlcat(str_flags, " ", sizeof(str_flags));
-				}
-				strlcat(str_flags, "public", sizeof(str_flags));
-			}
-			if ((flags & (1 << __base_class_type_info::__hwm_bit)) != 0) {
-				if (str_flags[0] != '\0') {
-					strlcat(str_flags, " ", sizeof(str_flags));
-				}
-				strlcat(str_flags, "HWM", sizeof(str_flags));
-			}
+			std::vector<std::string> flag_strs;
+			if ((flags & abi::__base_class_type_info::__virtual_mask  ) != 0) flag_strs.emplace_back("virtual");
+			if ((flags & abi::__base_class_type_info::__public_mask   ) != 0) flag_strs.emplace_back("public");
+			if ((flags & (1 << abi::__base_class_type_info::__hwm_bit)) != 0) flag_strs.emplace_back("HWM");
+			std::string str_flags = boost::algorithm::join(flag_strs, " ");
 			
 			printf("%s %u: ", indent, i);
 			if (offset >= 0) {
-				printf("+%06x %s\n", offset, str_flags);
+				printf("+0x%04X %s\n", offset, str_flags.c_str());
 			} else {
-				printf("-%06x %s\n", -offset, str_flags);
+				printf("-0x%04X %s\n", -offset, str_flags.c_str());
 			}
 			
 			symbol_t sym_base;
