@@ -82,25 +82,62 @@ typedef struct {
 } symbol_t;
 
 
-#define pr_debug(_fmt, ...) \
-	fprintf(stderr, "\e[37m" _fmt "\e[0m", ##__VA_ARGS__); fflush(stderr)
-#define pr_info(_fmt, ...) \
-	fprintf(stderr, "\e[97m" _fmt "\e[0m", ##__VA_ARGS__); fflush(stderr)
-#define pr_warn(_fmt, ...) \
-	fprintf(stderr, "\e[93m" _fmt "\e[0m", ##__VA_ARGS__); fflush(stderr)
-#define pr_err(_fmt, ...) \
-	fprintf(stderr, "\e[91m" _fmt "\e[0m", ##__VA_ARGS__); fflush(stderr)
-#define pr_special(_fmt, ...) \
-	fprintf(stderr, "\e[96m" _fmt "\e[0m", ##__VA_ARGS__); fflush(stderr)
+#define ANSI_RESET           0
+#define ANSI_FG_BLACK       30
+#define ANSI_FG_RED         31
+#define ANSI_FG_GREEN       32
+#define ANSI_FG_YELLOW      33
+#define ANSI_FG_BLUE        34
+#define ANSI_FG_MAGENTA     35
+#define ANSI_FG_CYAN        36
+#define ANSI_FG_WHITE       37
+#define ANSI_BG_BLACK       40
+#define ANSI_BG_RED         41
+#define ANSI_BG_GREEN       42
+#define ANSI_BG_YELLOW      43
+#define ANSI_BG_BLUE        44
+#define ANSI_BG_MAGENTA     45
+#define ANSI_BG_CYAN        46
+#define ANSI_BG_WHITE       47
+#define ANSI_FG_BR_BLACK    90
+#define ANSI_FG_BR_RED      91
+#define ANSI_FG_BR_GREEN    92
+#define ANSI_FG_BR_YELLOW   93
+#define ANSI_FG_BR_BLUE     94
+#define ANSI_FG_BR_MAGENTA  95
+#define ANSI_FG_BR_CYAN     96
+#define ANSI_FG_BR_WHITE    97
+#define ANSI_BG_BR_BLACK   100
+#define ANSI_BG_BR_RED     101
+#define ANSI_BG_BR_GREEN   102
+#define ANSI_BG_BR_YELLOW  103
+#define ANSI_BG_BR_BLUE    104
+#define ANSI_BG_BR_MAGENTA 105
+#define ANSI_BG_BR_CYAN    106
+#define ANSI_BG_BR_WHITE   107
 
-#define warn(_fmt, ...) \
-	warn("\e[93m" _fmt "\e[0m", ##__VA_ARGS__)
-#define warnx(_fmt, ...) \
-	warnx("\e[93m" _fmt "\e[0m", ##__VA_ARGS__)
-#define err(_code, _fmt, ...) \
-	err(_code, "\e[91m" _fmt "\e[0m", ##__VA_ARGS__)
-#define errx(_code, _fmt, ...) \
-	errx(_code, "\e[91m" _fmt "\e[0m", ##__VA_ARGS__)
+
+#define _c_str_(_x) #_x
+#define _c_str(_x) _c_str_(_x)
+#define _c_ansistr(_x) _c_str(ANSI_##_x)
+#define _c_fg(_clr, _str) "\e[" _c_ansistr(FG_##_clr) "m" _str "\e[" _c_ansistr(RESET) "m"
+#define _c_bg(_clr, _str) "\e[" _c_ansistr(BG_##_clr) "m" _str "\e[" _c_ansistr(RESET) "m"
+
+
+#define warn(         _fmt, ...) warn(         _c_fg(BR_YELLOW, _fmt), ##__VA_ARGS__)
+#define warnx(        _fmt, ...) warnx(        _c_fg(BR_YELLOW, _fmt), ##__VA_ARGS__)
+#define err(   _code, _fmt, ...) err(   _code, _c_fg(BR_RED   , _fmt), ##__VA_ARGS__)
+#define errx(  _code, _fmt, ...) errx(  _code, _c_fg(BR_RED   , _fmt), ##__VA_ARGS__)
+
+
+#define _pr_common(_clr, _fmt, ...) \
+	fflush(stdout); fprintf(stderr, _c_fg(_clr, _fmt), ##__VA_ARGS__); fflush(stderr)
+
+#define pr_debug(  _fmt, ...) _pr_common(   WHITE , _fmt, ##__VA_ARGS__)
+#define pr_info(   _fmt, ...) _pr_common(BR_WHITE , _fmt, ##__VA_ARGS__)
+#define pr_warn(   _fmt, ...) _pr_common(BR_YELLOW, _fmt, ##__VA_ARGS__)
+#define pr_err(    _fmt, ...) _pr_common(BR_RED   , _fmt, ##__VA_ARGS__)
+#define pr_special(_fmt, ...) _pr_common(BR_CYAN  , _fmt, ##__VA_ARGS__)
 
 
 #endif
