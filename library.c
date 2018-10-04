@@ -1,14 +1,6 @@
 #include "all.h"
 
 
-//static const char *libs_wanted[] = {
-//	"engine_srv.so",
-//	"server_srv.so",
-//	"libtier0_srv.so",
-//	"soundemittersystem_srv.so",
-//};
-
-//#define NUM_LIBS (sizeof(libs_wanted) / sizeof(*libs_wanted))
 #define NUM_LIBS 100
 
 static library_info_t libs[NUM_LIBS];
@@ -22,13 +14,9 @@ void lib_init(const char *path)
 	path_dir  = dirname(path_dir);
 	path_base = basename(path_base);
 	
-	
 	const char *name = path_base;
 	
 	pr_debug("lib_init: '%s'\n", path);
-	
-	//pr_debug("lib_hook:\n  path '%s'\n  name '%s'\n  handle %08x\n",
-	//	path, name, (uintptr_t)handle);
 	
 	library_info_t *lib = NULL;
 	for (int i = 0; i < NUM_LIBS; ++i) {
@@ -37,57 +25,22 @@ void lib_init(const char *path)
 			break;
 		}
 	}
-	if (lib == NULL) {
-		return;
-	}
-	
-	//pr_debug("lib_hook:\n  using lib idx %d (NUM_LIBS = %d)\n",
-	//	(lib - libs), NUM_LIBS);
-	
-	if (lib->name != NULL) {
-		//pr_warn("%s: path '%s' hooked twice!\n", __func__, path);
-		return;
-	}
-	
+	assert(lib != NULL);
 	
 	lib->name = name;
 	lib->path = path;
 	
 	if ((lib->fd = open(lib->path, O_RDONLY)) == -1) {
-	/*	char *fixed_path = malloc(1024);
-		snprintf(fixed_path, 1024, "../%s", path);
-		
-		if ((lib->fd = open(fixed_path, O_RDONLY)) == -1) {
-			snprintf(fixed_path, 1024, "../../%s", path);
-			
-			if ((lib->fd = open(fixed_path, O_RDONLY)) == -1) {
-				snprintf(fixed_path, 1024, "../../../%s", path);
-				
-				if ((lib->fd = open(fixed_path, O_RDONLY)) == -1) {*/
-					warn("open('%s') failed", name);
-					return;
-	/*			}
-			}
-		}
-		
-		lib->path = fixed_path;*/
+		err(1, "open('%s') failed", name);
 	}
 	
-//	lib->is_elf   = (strstr(name, ".so") != NULL);
-//	lib->is_macho = (strstr(name, ".dylib") != NULL);
-	
 	if (fstat(lib->fd, &lib->stat) != 0) {
-		warn("fstat('%s') failed", name);
-		return;
+		err(1, "fstat('%s') failed", name);
 	}
 	lib->size = lib->stat.st_size;
 	
-	//pr_debug("lib_hook:\n  path '%s'\n  fd %d\n  size %d\n",
-	//	lib->path, lib->fd, lib->size);
-	
 	if ((lib->map = mmap(NULL, lib->size, PROT_READ, MAP_PRIVATE, lib->fd, 0)) == MAP_FAILED) {
-		warn("mmap('%s') failed", name);
-		return;
+		err(1, "mmap('%s') failed", name);
 	}
 	
 	if (lib->size >= EI_NIDENT) {
@@ -127,17 +80,20 @@ void lib_init(const char *path)
 			return;
 		}
 		
+		// REMOVE ME
+		const char *s;
+		s = "_ZTI19IBaseObjectAutoList";
+		pr_debug("dlsym('%s') = %08X\n", s, (uintptr_t)dlsym(lib->handle, s));
+		s = "_ZN19IBaseObjectAutoListD0Ev";
+		pr_debug("dlsym('%s') = %08X\n", s, (uintptr_t)dlsym(lib->handle, s));
+		//exit(0);
+		
 		lib->baseaddr = lib->linkmap->l_addr;
 	} else {
 		lib->baseaddr = 0;
 	}
 	
 	symtab_init(lib);
-	
-	/*if (strcmp(name, "server_srv.so") == 0) {
-		symbols_init();
-		detour_init.setup();
-	}*/
 }
 
 

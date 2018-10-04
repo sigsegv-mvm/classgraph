@@ -70,28 +70,13 @@ extern "C" {
 }
 #endif
 
-/* sourcemod */
-//#include "sourcemod/asm.h"
-
 /* this project */
 #ifdef __cplusplus
 extern "C" {
 #endif
 #include "common.h"
-//#include "types.h"
-//#include "init.h"
 #include "library.h"
-//#include "detour.h"
 #include "symtab.h"
-//#include "vtable.h"
-//#include "patch.h"
-//#include "convar.h"
-//#include "sendprop.h"
-//#include "datamap.h"
-//#include "symbols.h"
-//#include "util.h"
-//#include "entprop.h"
-//#include "backtrace.h"
 #include "demangle.h"
 #include "symtab_elf.h"
 #include "symtab_macho.h"
