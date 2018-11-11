@@ -13,8 +13,6 @@ void lib_init(bool primary, const char *path)
 	path_dir  = dirname(path_dir);
 	path_base = basename(path_base);
 	
-	const char *name = path_base;
-	
 	pr_debug("lib_init: '%s'\n", path);
 	
 	library_info_t *lib = NULL;
@@ -28,7 +26,7 @@ void lib_init(bool primary, const char *path)
 	
 	lib->is_primary = primary;
 	
-	lib->name = name;
+	lib->name = path_base;
 	lib->path = path;
 	
 	// HACK: try /usr/lib32/ prefix if relative open() fails
@@ -38,17 +36,19 @@ void lib_init(bool primary, const char *path)
 		strlcat(path2, path, sizeof(path2));
 		
 		if ((lib->fd = open(path2, O_RDONLY)) == -1) {
-			err(1, "open('%s') failed", name);
+			err(1, "open('%s') failed", path2);
 		}
+		
+		lib->path = strdup(path2);
 	}
 	
 	if (fstat(lib->fd, &lib->stat) != 0) {
-		err(1, "fstat('%s') failed", name);
+		err(1, "fstat('%s') failed", lib->path);
 	}
 	lib->size = lib->stat.st_size;
 	
 	if ((lib->map = mmap(NULL, lib->size, PROT_READ, MAP_PRIVATE, lib->fd, 0)) == MAP_FAILED) {
-		err(1, "mmap('%s') failed", name);
+		err(1, "mmap('%s') failed", lib->path);
 	}
 	
 	if (lib->size >= EI_NIDENT) {
@@ -58,7 +58,7 @@ void lib_init(bool primary, const char *path)
 			assert(e_ident[EI_DATA]    == ELFDATA2LSB);
 			assert(e_ident[EI_VERSION] == EV_CURRENT);
 			
-			pr_debug("lib_init('%s'): detected ELF32\n", name);
+			pr_debug("lib_init('%s'): detected ELF32\n", lib->path);
 			lib->is_elf = true;
 		}
 	}
@@ -66,10 +66,10 @@ void lib_init(bool primary, const char *path)
 	if (lib->size >= sizeof(uint32_t)) {
 		const uint32_t *magic = lib->map;
 		if (*magic == MH_MAGIC) {
-			pr_debug("lib_init('%s'): detected Mach-O (non-fat)\n", name);
+			pr_debug("lib_init('%s'): detected Mach-O (non-fat)\n", lib->path);
 			lib->is_macho = true;
 		} else if (*magic == FAT_CIGAM) {
-			pr_debug("lib_init('%s'): detected Mach-O (fat)\n", name);
+			pr_debug("lib_init('%s'): detected Mach-O (fat)\n", lib->path);
 			lib->is_macho = true;
 		}
 	}
@@ -79,11 +79,11 @@ void lib_init(bool primary, const char *path)
 	
 	if (lib->is_elf) {
 		if ((lib->handle = dlopen(lib->path, RTLD_NOW | RTLD_GLOBAL)) == NULL) {
-			errx(1, "dlopen('%s') failed: %s", name, dlerror());
+			errx(1, "dlopen('%s') failed: %s", lib->path, dlerror());
 		}
 		
 		if (dlinfo(lib->handle, RTLD_DI_LINKMAP, &lib->linkmap) != 0) {
-			warnx("dlinfo('%s', RTLD_DI_LINKMAP) failed: %s", name, dlerror());
+			warnx("dlinfo('%s', RTLD_DI_LINKMAP) failed: %s", lib->path, dlerror());
 			return;
 		}
 		
