@@ -34,11 +34,24 @@ void symtab_elf_init(library_info_t *lib)
 	lib->depend_count = 0;
 	
 	GElf_Shdr symtab_shdr;
-	Elf_Scn *symtab_scn;
-	assert(symtab_elf_find_section(lib, SHT_SYMTAB, ".symtab", &symtab_shdr, &symtab_scn) == 1);
-	lib->elf_symtab_shdr = symtab_shdr;
-	lib->elf_symtab_data = elf_getdata(symtab_scn, NULL);
-	lib->elf_symtab_count = symtab_shdr.sh_size / symtab_shdr.sh_entsize;
+	Elf_Scn *symtab_scn = NULL;
+	if (lib->is_primary) {
+		assert(symtab_elf_find_section(lib, SHT_SYMTAB, ".symtab", &symtab_shdr, &symtab_scn) == 1);
+	} else {
+		if (symtab_elf_find_section(lib, SHT_SYMTAB, ".symtab", &symtab_shdr, &symtab_scn) != 1) {
+			pr_warn("symtab_elf_init: can't find '.symtab' section for '%s'!\n", lib->name);
+		}
+	}
+	
+	if (symtab_scn != NULL) {
+		lib->elf_symtab_shdr  = symtab_shdr;
+		lib->elf_symtab_data  = elf_getdata(symtab_scn, NULL);
+		lib->elf_symtab_count = symtab_shdr.sh_size / symtab_shdr.sh_entsize;
+	} else {
+		memset(&lib->elf_symtab_shdr, 0x00, sizeof(lib->elf_symtab_shdr));
+		lib->elf_symtab_data  = NULL;
+		lib->elf_symtab_count = 0;
+	}
 	
 	Elf_Scn *dynstr_scn;
 	assert(symtab_elf_find_section(lib, SHT_STRTAB, ".dynstr", NULL, &dynstr_scn) == 1);
