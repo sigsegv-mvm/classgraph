@@ -193,7 +193,9 @@ int main(int argc, char **argv)
 	});
 	
 	for (const symbol_t& sym : syms) {
-		recurse_typeinfo(0, &sym);
+		if (sym.lib->is_primary) {
+			recurse_typeinfo(0, &sym);
+		}
 	}
 	
 	return 0;
